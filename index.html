@@ -363,7 +363,7 @@
             ['all', 1, 2, 3].forEach(f => {
                 const el = document.getElementById('filterBtn_' + f);
                 if (el) {
-                    if (currentFilter == f) {
+                    if (String(currentFilter) === String(f)) {
                         el.className = "px-2.5 py-1 text-[10px] font-bold rounded-full bg-white shadow-sm border border-gray-200 text-black transition-all";
                     } else {
                         el.className = "px-2.5 py-1 text-[10px] font-bold rounded-full text-gray-400 hover:text-black transition-all";
@@ -382,7 +382,10 @@
 
             const filtered = prompts.filter(p => {
                 if (p.category !== currentTab) return false;
-                if (currentFilter !== 'all' && p.peopleCount != currentFilter) return false;
+                if (currentFilter !== 'all') {
+                    const c = parseInt(p.peopleCount) || 1;
+                    if (c !== parseInt(currentFilter)) return false;
+                }
                 return true;
             });
 
@@ -394,7 +397,8 @@
 
             emptyState.classList.add('hidden');
             container.innerHTML = filtered.map(prompt => {
-                const pCountBadge = `<span class="text-[8px] font-bold bg-gray-100 text-gray-600 px-1 rounded absolute top-2 right-2 z-20 border border-gray-200 shadow-sm backdrop-blur-sm bg-white/80">${prompt.peopleCount || 1}P</span>`;
+                const pCountVal = parseInt(prompt.peopleCount) || 1;
+                const pCountBadge = `<span class="text-[8px] font-bold bg-gray-100 text-gray-600 px-1 rounded absolute top-2 right-2 z-20 border border-gray-200 shadow-sm backdrop-blur-sm bg-white/80">${pCountVal}P</span>`;
 
                 if (prompt.category === 'imagenes') {
                     const currentIdx = prompt.currentVersionIndex || 0;
@@ -558,16 +562,22 @@
 
         function removeSelectedImage(e, fileId, cId, pId) {
             if (e) e.stopPropagation();
-            document.getElementById(fileId).value = "";
-            document.getElementById(cId).classList.add('hidden');
-            if (pId) document.getElementById(pId).classList.remove('hidden');
+            const fEl = document.getElementById(fileId);
+            if (fEl) fEl.value = "";
+            const cEl = document.getElementById(cId);
+            if (cEl) cEl.classList.add('hidden');
+            if (pId) {
+                const pEl = document.getElementById(pId);
+                if (pEl) pEl.classList.remove('hidden');
+            }
             
             const upBtn = document.getElementById('btnUpdateThumbnail');
             if (upBtn) upBtn.classList.add('hidden');
             base64UploadCache.data = null;
         }
 
-        async function updateThumbnailOnly() {
+        async function updateThumbnailOnly(event) {
+            if (event) event.stopPropagation();
             const prompt = prompts.find(p => p.id === activePromptId);
             if (!prompt || !base64UploadCache.data) return;
 
@@ -605,7 +615,8 @@
 
         function switchModalBlock(bId) {
             activeModalBlockId = bId;
-            prompts.find(p => p.id === activePromptId).activeBlockId = bId;
+            const p = prompts.find(p => p.id === activePromptId);
+            if (p) p.activeBlockId = bId;
             renderDetailModalContent();
         }
         function switchModalVersion(idx) {
@@ -619,7 +630,7 @@
             const p = prompts.find(x => x.id === activePromptId); if (!p) return;
 
             document.getElementById('detailCategory').textContent = p.category === 'imagenes' ? 'Imagen' : 'Video';
-            document.getElementById('detailPeople').textContent = (p.peopleCount || 1) + 'P';
+            document.getElementById('detailPeople').textContent = (parseInt(p.peopleCount) || 1) + 'P';
             document.getElementById('detailName').textContent = p.name;
             
             const thumbCont = document.getElementById('detailThumbnailContainer');
@@ -636,20 +647,22 @@
                     imgEl.classList.add('hidden'); fall.classList.remove('hidden');
                 }
 
+                if (activeModalVersionIndex >= p.versions.length) activeModalVersionIndex = p.versions.length - 1;
                 const ver = p.versions[activeModalVersionIndex] || p.versions[0];
+                
                 document.getElementById('detailPromptBox').textContent = ver.text;
                 document.getElementById('activeVersionBadge').textContent = `v${ver.id}`;
                 
                 document.getElementById('detailVersionsContainer').innerHTML = p.versions.map((v, i) => {
-                    const activeClass = i === activeModalVersionIndex ? "bg-black text-white" : "bg-gray-100 text-gray-500 hover:border-black border border-transparent";
-                    return `<button onclick="switchModalVersion(${i})" class="px-2.5 py-1 rounded text-[9px] font-bold uppercase transition-all ${activeClass}">v${v.id}</button>`;
+                    const activeClass = i === activeModalVersionIndex ? "bg-black text-white font-bold" : "bg-gray-100 text-gray-500 hover:border-black border border-transparent";
+                    return `<button onclick="switchModalVersion(${i})" class="px-2.5 py-1 rounded text-[9px] uppercase transition-all ${activeClass}">v${v.id}</button>`;
                 }).join('');
-                document.getElementById('nextVersionIndicator').textContent = `V${p.versions.length + 1}`;
+                document.getElementById('nextVersionIndicator').textContent = `Siguiente: v${p.versions.length + 1}`;
             } else {
                 thumbCont.classList.add('hidden'); vBlockSel.classList.remove('hidden');
                 ['b1','b2','b3'].forEach(b => {
                     const el = document.getElementById(`modalBlockBtn_${b}`);
-                    el.className = b === activeModalBlockId ? "flex-1 py-1.5 text-[10px] font-bold rounded bg-black text-white" : "flex-1 py-1.5 text-[10px] font-bold rounded bg-gray-50 text-gray-400 hover:text-black";
+                    if (el) el.className = b === activeModalBlockId ? "flex-1 py-1.5 text-[10px] font-bold rounded bg-black text-white" : "flex-1 py-1.5 text-[10px] font-bold rounded bg-gray-50 text-gray-400 hover:text-black";
                 });
                 
                 const bData = p.blocks[activeModalBlockId];
@@ -659,16 +672,16 @@
                     document.getElementById('detailPromptBox').textContent = "Vacío.";
                     document.getElementById('activeVersionBadge').textContent = "-";
                     document.getElementById('detailVersionsContainer').innerHTML = "";
-                    document.getElementById('nextVersionIndicator').textContent = "V1";
+                    document.getElementById('nextVersionIndicator').textContent = "Inicia con: v1";
                 } else {
                     const ver = bData.versions[cIdx];
                     document.getElementById('detailPromptBox').textContent = ver.text;
                     document.getElementById('activeVersionBadge').textContent = `v${ver.id}`;
                     document.getElementById('detailVersionsContainer').innerHTML = bData.versions.map((v, i) => {
-                        const activeClass = i === cIdx ? "bg-black text-white" : "bg-gray-100 text-gray-500 border border-transparent hover:border-black";
-                        return `<button onclick="switchModalVersion(${i})" class="px-2.5 py-1 rounded text-[9px] font-bold uppercase transition-all ${activeClass}">v${v.id}</button>`;
+                        const activeClass = i === cIdx ? "bg-black text-white font-bold" : "bg-gray-100 text-gray-500 border border-transparent hover:border-black";
+                        return `<button onclick="switchModalVersion(${i})" class="px-2.5 py-1 rounded text-[9px] uppercase transition-all ${activeClass}">v${v.id}</button>`;
                     }).join('');
-                    document.getElementById('nextVersionIndicator').textContent = `V${bData.versions.length + 1}`;
+                    document.getElementById('nextVersionIndicator').textContent = `Siguiente: v${bData.versions.length + 1}`;
                 }
             }
         }
@@ -715,13 +728,20 @@
         }
 
         function openNewPromptModal() {
-            document.getElementById('promptCategory').value = currentTab; handleCategoryChange();
+            document.getElementById('promptCategory').value = currentTab;
+            const popEl = document.getElementById('promptPeople');
+            if(popEl) popEl.value = (currentFilter === 'all') ? "1" : currentFilter;
+            
+            handleCategoryChange();
             document.getElementById('newPromptModal').classList.remove('hidden');
             base64UploadCache = {data:null, name:""};
         }
         function closeNewPromptModal() {
             document.getElementById('newPromptModal').classList.add('hidden');
-            ['promptName','promptText','block1Text','block2Text','block3Text'].forEach(id => document.getElementById(id).value = '');
+            ['promptName','promptText','block1Text','block2Text','block3Text'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = '';
+            });
             removeSelectedImage(null, 'newPromptFile', 'newPromptPreviewContainer', 'newPromptDropPlaceholder');
         }
 
@@ -757,13 +777,14 @@
         async function fetchPrompts() {
             try {
                 const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 10000);
-                const res = await fetch(webAppUrl, { method: 'GET', mode: 'cors', redirect: 'follow', signal: ctrl.signal });
+                const fetchUrl = webAppUrl + (webAppUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+                const res = await fetch(fetchUrl, { method: 'GET', mode: 'cors', redirect: 'follow', signal: ctrl.signal });
                 if (!res.ok) throw new Error();
                 prompts = await res.json();
                 localStorage.setItem('editorial_prompts_v3', JSON.stringify(prompts));
             } catch (e) {
                 prompts = JSON.parse(localStorage.getItem('editorial_prompts_v3')) || [];
-                showToast("Offline mode");
+                showToast("Modo Offline");
             }
             renderPrompts();
         }
@@ -811,7 +832,7 @@
             document.getElementById('confirmYesBtn').onclick = () => { document.getElementById('customConfirmModal').classList.add('hidden'); if(confirmCallback) confirmCallback(); };
             document.getElementById('confirmNoBtn').onclick = () => document.getElementById('customConfirmModal').classList.add('hidden');
             
-            // Drag and drop events for new prompt
+            // Drag and drop
             const dz1 = document.getElementById('newPromptDropZone');
             if (dz1) {
                 dz1.ondragover = e => { e.preventDefault(); dz1.classList.add('dragover'); };
