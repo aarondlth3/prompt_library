@@ -175,9 +175,19 @@
             <!-- Header -->
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <div class="flex gap-1.5 mb-1.5">
+                    <div class="flex gap-1.5 mb-1.5 items-center">
                         <span id="detailCategory" class="text-[8px] uppercase tracking-[0.2em] font-bold bg-black text-white px-2 py-0.5 rounded-full">CAT</span>
-                        <span id="detailPeople" class="text-[8px] uppercase tracking-[0.2em] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full border border-gray-200">1P</span>
+                        
+                        <!-- SELECTOR INTERACTIVO PARA NÚMERO DE PERSONAS -->
+                        <div class="relative inline-block group">
+                            <select id="detailPeopleSelect" onchange="updatePeopleCount(event)" class="text-[8px] uppercase tracking-[0.2em] font-bold bg-gray-100 text-gray-600 pl-2 pr-4 py-0.5 rounded-full border border-gray-200 outline-none cursor-pointer appearance-none group-hover:border-black transition-colors" title="Cambiar número de personas">
+                                <option value="1">1P</option>
+                                <option value="2">2P</option>
+                                <option value="3">3P</option>
+                            </select>
+                            <svg class="w-2 h-2 absolute right-1.5 top-[5px] pointer-events-none text-gray-400 group-hover:text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+
                     </div>
                     <h2 id="detailName" class="serif text-xl font-bold leading-tight">Nombre del Prompt</h2>
                 </div>
@@ -294,9 +304,6 @@
     </div>
 
     <script>
-        // =========================================================================
-        // 1. ESTADO GLOBAL
-        // =========================================================================
         const webAppUrl = 'https://script.google.com/macros/s/AKfycbxdrh2FqupvEOwxhHPBxnrpfnQBkm3iu9wZ_0qpD0HJXImYUWSCpQ4um7yLs1IWlB_mfg/exec';
 
         let currentTab = 'imagenes';
@@ -309,9 +316,6 @@
         let base64UploadCache = { data: null, name: "" };
         let confirmCallback = null;
 
-        // =========================================================================
-        // 2. UTILIDADES
-        // =========================================================================
         function showToast(msg) {
             const toast = document.getElementById('toast');
             if(!toast) return;
@@ -332,9 +336,6 @@
             document.body.appendChild(temp); temp.select(); document.execCommand('copy'); document.body.removeChild(temp);
         }
 
-        // =========================================================================
-        // 3. NAVEGACIÓN Y FILTROS
-        // =========================================================================
         function switchTab(tab) {
             currentTab = tab;
             updateFloatingMenuStyles();
@@ -348,7 +349,6 @@
         }
 
         function updateFloatingMenuStyles() {
-            // Tabs
             const bImg = document.getElementById('tabBtn_imagenes');
             const bVid = document.getElementById('tabBtn_videos');
             if (currentTab === 'imagenes') {
@@ -359,7 +359,6 @@
                 if(bImg) { bImg.classList.add('text-gray-400'); bImg.classList.remove('text-black'); }
             }
 
-            // Filters
             ['all', 1, 2, 3].forEach(f => {
                 const el = document.getElementById('filterBtn_' + f);
                 if (el) {
@@ -372,9 +371,6 @@
             });
         }
 
-        // =========================================================================
-        // 4. RENDER CATALOG (COMPACTO Y EDITORIAL)
-        // =========================================================================
         function renderPrompts() {
             const container = document.getElementById('promptCatalog');
             const emptyState = document.getElementById('emptyState');
@@ -445,7 +441,6 @@
                         </div>
                     `;
                 } else {
-                    // VIDEOS
                     const activeBlockId = prompt.activeBlockId || 'b1';
                     const blockData = prompt.blocks[activeBlockId];
                     const activeVer = blockData.versions[blockData.currentIdx || 0];
@@ -524,9 +519,6 @@
             if (prompt) { prompt.activeBlockId = blockId; localStorage.setItem('editorial_prompts_v3', JSON.stringify(prompts)); renderPrompts(); }
         }
 
-        // =========================================================================
-        // 5. MANEJO DE IMÁGENES
-        // =========================================================================
         function triggerFileInput(id) {
             const el = document.getElementById(id); if (el) el.click();
         }
@@ -593,9 +585,21 @@
             }
         }
 
-        // =========================================================================
-        // 6. DETALLES DEL PROMPT (MODAL)
-        // =========================================================================
+        async function updatePeopleCount(event) {
+            const prompt = prompts.find(x => x.id === activePromptId);
+            if (!prompt) return;
+            
+            const newCount = parseInt(event.target.value) || 1;
+            prompt.peopleCount = newCount;
+            
+            showToast("Actualizando...");
+            const success = await apiSavePrompt(prompt);
+            if(success) {
+                renderPrompts();
+                showToast("Personas actualizadas");
+            }
+        }
+
         function openDetailModal(id) {
             const p = prompts.find(x => x.id === id); if (!p) return;
             activePromptId = id; base64UploadCache.data = null;
@@ -619,6 +623,7 @@
             if (p) p.activeBlockId = bId;
             renderDetailModalContent();
         }
+        
         function switchModalVersion(idx) {
             const p = prompts.find(x => x.id === activePromptId);
             if (p.category === 'imagenes') p.currentVersionIndex = idx; else p.blocks[activeModalBlockId].currentIdx = idx;
@@ -630,7 +635,11 @@
             const p = prompts.find(x => x.id === activePromptId); if (!p) return;
 
             document.getElementById('detailCategory').textContent = p.category === 'imagenes' ? 'Imagen' : 'Video';
-            document.getElementById('detailPeople').textContent = (parseInt(p.peopleCount) || 1) + 'P';
+            
+            // Selector de personas integrado en el Header
+            const peopleSel = document.getElementById('detailPeopleSelect');
+            if (peopleSel) peopleSel.value = parseInt(p.peopleCount) || 1;
+
             document.getElementById('detailName').textContent = p.name;
             
             const thumbCont = document.getElementById('detailThumbnailContainer');
@@ -649,20 +658,19 @@
 
                 if (activeModalVersionIndex >= p.versions.length) activeModalVersionIndex = p.versions.length - 1;
                 const ver = p.versions[activeModalVersionIndex] || p.versions[0];
-                
                 document.getElementById('detailPromptBox').textContent = ver.text;
                 document.getElementById('activeVersionBadge').textContent = `v${ver.id}`;
                 
                 document.getElementById('detailVersionsContainer').innerHTML = p.versions.map((v, i) => {
-                    const activeClass = i === activeModalVersionIndex ? "bg-black text-white font-bold" : "bg-gray-100 text-gray-500 hover:border-black border border-transparent";
-                    return `<button onclick="switchModalVersion(${i})" class="px-2.5 py-1 rounded text-[9px] uppercase transition-all ${activeClass}">v${v.id}</button>`;
+                    const activeClass = i === activeModalVersionIndex ? "bg-black text-white" : "bg-gray-100 text-gray-500 hover:border-black border border-transparent";
+                    return `<button onclick="switchModalVersion(${i})" class="px-2.5 py-1 rounded text-[9px] font-bold uppercase transition-all ${activeClass}">v${v.id}</button>`;
                 }).join('');
-                document.getElementById('nextVersionIndicator').textContent = `Siguiente: v${p.versions.length + 1}`;
+                document.getElementById('nextVersionIndicator').textContent = `V${p.versions.length + 1}`;
             } else {
                 thumbCont.classList.add('hidden'); vBlockSel.classList.remove('hidden');
                 ['b1','b2','b3'].forEach(b => {
                     const el = document.getElementById(`modalBlockBtn_${b}`);
-                    if (el) el.className = b === activeModalBlockId ? "flex-1 py-1.5 text-[10px] font-bold rounded bg-black text-white" : "flex-1 py-1.5 text-[10px] font-bold rounded bg-gray-50 text-gray-400 hover:text-black";
+                    if(el) el.className = b === activeModalBlockId ? "flex-1 py-1.5 text-[10px] font-bold rounded bg-black text-white" : "flex-1 py-1.5 text-[10px] font-bold rounded bg-gray-50 text-gray-400 hover:text-black";
                 });
                 
                 const bData = p.blocks[activeModalBlockId];
@@ -672,16 +680,16 @@
                     document.getElementById('detailPromptBox').textContent = "Vacío.";
                     document.getElementById('activeVersionBadge').textContent = "-";
                     document.getElementById('detailVersionsContainer').innerHTML = "";
-                    document.getElementById('nextVersionIndicator').textContent = "Inicia con: v1";
+                    document.getElementById('nextVersionIndicator').textContent = "V1";
                 } else {
                     const ver = bData.versions[cIdx];
                     document.getElementById('detailPromptBox').textContent = ver.text;
                     document.getElementById('activeVersionBadge').textContent = `v${ver.id}`;
                     document.getElementById('detailVersionsContainer').innerHTML = bData.versions.map((v, i) => {
-                        const activeClass = i === cIdx ? "bg-black text-white font-bold" : "bg-gray-100 text-gray-500 border border-transparent hover:border-black";
-                        return `<button onclick="switchModalVersion(${i})" class="px-2.5 py-1 rounded text-[9px] uppercase transition-all ${activeClass}">v${v.id}</button>`;
+                        const activeClass = i === cIdx ? "bg-black text-white" : "bg-gray-100 text-gray-500 border border-transparent hover:border-black";
+                        return `<button onclick="switchModalVersion(${i})" class="px-2.5 py-1 rounded text-[9px] font-bold uppercase transition-all ${activeClass}">v${v.id}</button>`;
                     }).join('');
-                    document.getElementById('nextVersionIndicator').textContent = `Siguiente: v${bData.versions.length + 1}`;
+                    document.getElementById('nextVersionIndicator').textContent = `V${bData.versions.length + 1}`;
                 }
             }
         }
@@ -718,9 +726,6 @@
             if(txt) { executeCopy(txt); showToast(`Copiado - ${suf}`); }
         }
 
-        // =========================================================================
-        // 7. CREACIÓN Y RED
-        // =========================================================================
         function handleCategoryChange() {
             const cat = document.getElementById('promptCategory').value;
             if (cat === 'videos') { document.getElementById('singlePromptFieldContainer').classList.add('hidden'); document.getElementById('videoBlocksFieldContainer').classList.remove('hidden'); } 
@@ -728,19 +733,20 @@
         }
 
         function openNewPromptModal() {
-            document.getElementById('promptCategory').value = currentTab;
+            document.getElementById('promptCategory').value = currentTab; 
             const popEl = document.getElementById('promptPeople');
             if(popEl) popEl.value = (currentFilter === 'all') ? "1" : currentFilter;
-            
+
             handleCategoryChange();
             document.getElementById('newPromptModal').classList.remove('hidden');
             base64UploadCache = {data:null, name:""};
         }
+        
         function closeNewPromptModal() {
             document.getElementById('newPromptModal').classList.add('hidden');
             ['promptName','promptText','block1Text','block2Text','block3Text'].forEach(id => {
                 const el = document.getElementById(id);
-                if(el) el.value = '';
+                if (el) el.value = '';
             });
             removeSelectedImage(null, 'newPromptFile', 'newPromptPreviewContainer', 'newPromptDropPlaceholder');
         }
@@ -832,7 +838,7 @@
             document.getElementById('confirmYesBtn').onclick = () => { document.getElementById('customConfirmModal').classList.add('hidden'); if(confirmCallback) confirmCallback(); };
             document.getElementById('confirmNoBtn').onclick = () => document.getElementById('customConfirmModal').classList.add('hidden');
             
-            // Drag and drop
+            // Drag and drop events for new prompt
             const dz1 = document.getElementById('newPromptDropZone');
             if (dz1) {
                 dz1.ondragover = e => { e.preventDefault(); dz1.classList.add('dragover'); };
