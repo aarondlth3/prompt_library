@@ -1,186 +1,360 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Archive Editorial</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prompt Archive</title>
+    
+    <!-- Icono 📇 para navegador y Home Screen de iOS -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📇</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📇</text></svg>">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #F5F5F7; 
-            color: #111111;
+            background-color: #08080A; 
+            color: #FFFFFF;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
         
-        .serif { font-family: 'Playfair Display', serif; }
-        
-        /* Century Gothic Fallback Stack */
-        .century-gothic { 
-            font-family: 'Century Gothic', CenturyGothic, AppleGothic, sans-serif; 
-        }
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
         
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-        .custom-scrollbar-dark::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); }
         
         .modal-overlay {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
         }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
-        }
-
-        /* Smooth Animation for Filters */
+        /* Animación para el filtrado de tarjetas */
         @keyframes fadeUpBlur {
-            0% { opacity: 0; transform: translateY(20px) scale(0.97); filter: blur(10px); }
+            0% { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(6px); }
             100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
-        
         .animate-fade-in {
-            animation: fadeUpBlur 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: fadeUpBlur 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0; 
         }
         
-        /* Immersive Modal Animation */
+        /* Animación Modal Detalle */
         @keyframes slideUpImmersive {
             0% { transform: translateY(100%); opacity: 0; }
             100% { transform: translateY(0); opacity: 1; }
         }
         .animate-slide-up {
-            animation: slideUpImmersive 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: slideUpImmersive 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col pb-32">
+<body class="min-h-screen flex flex-col pb-28 selection:bg-indigo-500 selection:text-white">
 
-    <!-- ENCABEZADO TIPO REVISTA -->
-    <header class="w-full max-w-[1800px] mx-auto px-6 md:px-10 pt-12 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-            <span class="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase mb-2 block">Librería de Recursos</span>
-            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 leading-none">
-                PROMPT<br>ARCHIVE
-            </h1>
+    <!-- ENCABEZADO ESTILO "DISCOVER" -->
+    <header class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 pt-7 pb-3">
+        <!-- Fila Superior: Título + Avatar/Acciones -->
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-3">
+                <h1 class="font-montserrat text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                    Prompt Archive
+                </h1>
+                <span id="syncBadge" class="hidden text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white/10 text-white/60 border border-white/10">
+                    Sincronizando...
+                </span>
+            </div>
+
+            <!-- Botones Superiores Derecha (Ajustes + Avatar/Nuevo) -->
+            <div class="flex items-center gap-2.5">
+                <button onclick="openSettingsModal()" class="w-10 h-10 rounded-full bg-[#16161A] border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all" title="Sincronización y Ajustes">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+                <button onclick="openNewPromptModal()" class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 p-[2px] shadow-lg hover:scale-105 transition-transform" title="Nuevo Prompt">
+                    <div class="w-full h-full bg-[#08080A] hover:bg-transparent transition-colors rounded-full flex items-center justify-center text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
+                    </div>
+                </button>
+            </div>
         </div>
-        
-        <div class="glass-panel px-4 py-2 rounded-full border border-gray-200 shadow-sm flex items-center gap-2">
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            <span id="promptCountLabel" class="text-xs font-semibold text-gray-600">0 recursos activos</span>
+
+        <!-- Fila Buscador + Botón de Filtro (Idéntico a la referencia) -->
+        <div class="flex items-center gap-2.5">
+            <div class="relative flex-grow">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/40 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    oninput="handleSearchInput(this.value)"
+                    placeholder="Buscar por título o contenido del prompt..." 
+                    class="w-full bg-[#16161A] border border-white/10 focus:border-white/30 rounded-full py-3 pl-11 pr-9 text-xs sm:text-sm text-white placeholder-white/40 outline-none transition-all"
+                >
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Botón de Filtro con Sliders -->
+            <div class="relative" id="filterBtnContainer">
+                <button onclick="toggleFilterMenu()" id="mainFilterBtn" class="w-11 h-11 rounded-full bg-[#16161A] border border-white/10 hover:border-white/30 flex items-center justify-center text-white/80 hover:text-white transition-all relative" title="Filtrar por Personas">
+                    <!-- Icono Sliders igual a la referencia -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    <span id="filterActiveDot" class="hidden absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-[#16161A]"></span>
+                </button>
+
+                <!-- Dropdown del filtro -->
+                <div id="filterDropdown" class="hidden absolute top-[115%] right-0 bg-[#16161A]/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl p-1.5 flex items-center gap-1 z-50 min-w-[190px]">
+                    <button onclick="switchPeopleFilter('all')" id="filterBtn_all" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl bg-white text-black transition-all">Todos</button>
+                    <button onclick="switchPeopleFilter('1')" id="filterBtn_1" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all">1P</button>
+                    <button onclick="switchPeopleFilter('2')" id="filterBtn_2" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all">2P</button>
+                    <button onclick="switchPeopleFilter('3')" id="filterBtn_3" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all">3P</button>
+                </div>
+            </div>
         </div>
     </header>
 
-    <!-- CUERPO PRINCIPAL (CATÁLOGO BENTO) -->
-    <main class="max-w-[1800px] w-full mx-auto px-6 md:px-10 flex-grow">
-        <div id="promptCatalog" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <!-- CUERPO PRINCIPAL (CATÁLOGO ESCALONADO A 2 COLUMNAS EN MÓVIL) -->
+    <main class="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-2 flex-grow">
+        <div id="promptCatalog" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-5 items-start">
             <!-- Tarjetas Inyectadas por JS -->
         </div>
 
         <!-- ESTADO VACÍO -->
-        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-32 text-center opacity-50">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <p class="text-sm font-semibold tracking-widest uppercase text-gray-400">Carpeta Vacía</p>
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-24 text-center">
+            <div class="w-16 h-16 rounded-full bg-[#16161A] border border-white/10 flex items-center justify-center mb-4 text-white/30">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
+            <p class="text-xs font-bold tracking-widest uppercase text-white/40">No se encontraron prompts</p>
         </div>
     </main>
 
-    <!-- FLOATING DECK (MENÚ INFERIOR) -->
-    <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 glass-panel border border-gray-200/80 shadow-[0_20px_40px_rgba(0,0,0,0.08)] rounded-full px-6 py-3 flex items-center gap-4 transition-all scale-95 sm:scale-100">
+    <!-- DOCK INFERIOR FLOTANTE (OSCURO Y MINIMALISTA) -->
+    <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-[#16161A]/90 backdrop-blur-2xl border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-full p-1.5 flex items-center gap-1">
+        <button onclick="switchTab('imagenes')" id="tabBtn_imagenes" class="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-white text-black shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            <span>Imágenes</span>
+        </button>
+        <button onclick="switchTab('videos')" id="tabBtn_videos" class="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-white/60 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            <span>Videos</span>
+        </button>
+    </div>
+
+    <!-- MODAL 2: VISTA DE DETALLE INMERSIVA (ESTILO PERFIL "KAIRA R, 22") -->
+    <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-end md:items-center justify-center modal-overlay transition-all">
         
-        <!-- Categorías -->
-        <div class="flex items-center gap-1.5">
-            <button onclick="switchTab('imagenes')" id="tabBtn_imagenes" class="p-2.5 rounded-full hover:bg-gray-100 transition-colors text-black" title="Imágenes">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            </button>
-            <button onclick="switchTab('videos')" id="tabBtn_videos" class="p-2.5 rounded-full hover:bg-gray-100 transition-colors text-gray-400" title="Videos">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-            </button>
-        </div>
+        <div class="w-full h-[96vh] md:h-[88vh] md:max-w-[430px] bg-[#08080A] md:border md:border-white/15 md:rounded-[42px] rounded-t-[36px] shadow-[0_25px_70px_rgba(0,0,0,0.95)] relative flex flex-col overflow-hidden animate-slide-up">
 
-        <div class="w-[1px] h-6 bg-gray-200"></div>
+            <!-- SECCIÓN SUPERIOR: IMAGEN + CONTROLES FLOTANTES + BARRAS DE PROGRESO -->
+            <div class="relative w-full h-[54%] flex-shrink-0 bg-[#121216] overflow-hidden">
+                <!-- Imagen de Fondo Centrada sin estirarse -->
+                <img id="detailModalBg" src="" referrerpolicy="no-referrer" class="w-full h-full object-cover object-center transition-all duration-500">
+                
+                <!-- Fallback visual cuando no hay foto o es video -->
+                <div id="detailModalBgFallback" class="hidden absolute inset-0 bg-gradient-to-br from-indigo-950/60 via-[#0E0E14] to-[#08080A] flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-white/15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                </div>
 
-        <!-- Filtros de Personas -->
-        <div class="flex items-center gap-1.5 bg-gray-100/50 p-1.5 rounded-full border border-gray-200/50">
-            <button onclick="switchPeopleFilter('all')" id="filterBtn_all" class="px-3 py-1.5 text-[11px] font-bold rounded-full bg-white shadow-sm border border-gray-200 text-black transition-all">Todos</button>
-            <button onclick="switchPeopleFilter('1')" id="filterBtn_1" class="px-3 py-1.5 text-[11px] font-bold rounded-full text-gray-500 hover:text-black transition-all">1P</button>
-            <button onclick="switchPeopleFilter('2')" id="filterBtn_2" class="px-3 py-1.5 text-[11px] font-bold rounded-full text-gray-500 hover:text-black transition-all">2P</button>
-            <button onclick="switchPeopleFilter('3')" id="filterBtn_3" class="px-3 py-1.5 text-[11px] font-bold rounded-full text-gray-500 hover:text-black transition-all">3P</button>
-        </div>
+                <!-- Degradado oscuro inferior para fundirse con el cuerpo negro -->
+                <div class="absolute inset-0 bg-gradient-to-t from-[#08080A] via-[#08080A]/25 to-black/30 pointer-events-none"></div>
 
-        <div class="w-[1px] h-6 bg-gray-200"></div>
+                <!-- Botones Superiores (Atrás / Eliminar Recurso) -->
+                <div class="absolute top-5 left-5 right-5 flex justify-between items-center z-30">
+                    <button onclick="closeDetailModal()" class="w-10 h-10 rounded-full bg-black/35 hover:bg-black/60 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-all">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                    </button>
+                    <button onclick="deleteActivePrompt(event)" class="w-10 h-10 rounded-full bg-black/35 hover:bg-red-500/80 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-all" title="Eliminar Prompt Completo">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                </div>
 
-        <!-- Acciones -->
-        <div class="flex items-center gap-2">
-            <button onclick="openNewPromptModal()" class="p-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors shadow-lg shadow-black/20" title="Nuevo Prompt">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
-            </button>
-            <button onclick="openSettingsModal()" class="p-2 text-gray-400 hover:text-black hover:bg-gray-100 rounded-full transition-colors" title="Ajustes">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </button>
+                <!-- Columna de 3 Botones Flotantes a la Derecha (Igual a la referencia: X, Corazón/Copiar, Chat/Foto) -->
+                <div class="absolute right-5 bottom-10 flex flex-col gap-3 z-30">
+                    <!-- Botón 1: Eliminar versión actual (X) -->
+                    <button id="btnDeleteCurrentVersion" onclick="deleteCurrentVersion(event)" class="w-11 h-11 rounded-full bg-black/45 hover:bg-red-500/80 backdrop-blur-lg border border-white/15 text-white flex items-center justify-center transition-all shadow-lg" title="Eliminar esta versión">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                    <!-- Botón 2: Copiar Prompt Activo -->
+                    <button onclick="copyCurrentModalPrompt()" class="w-11 h-11 rounded-full bg-white text-black hover:scale-105 backdrop-blur-lg flex items-center justify-center transition-all shadow-xl" title="Copiar Versión Activa">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    </button>
+                    <!-- Botón 3: Subir / Cambiar Foto -->
+                    <div class="relative">
+                        <input type="file" id="detailFile" class="hidden" accept="image/*" onchange="handleImageFileSelect(this, 'detailLocalPreviewContainer', 'detailLocalPreview')">
+                        <button onclick="triggerFileInput('detailFile')" class="w-11 h-11 rounded-full bg-black/45 hover:bg-black/75 backdrop-blur-lg border border-white/15 text-white flex items-center justify-center transition-all shadow-lg" title="Cambiar Imagen">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mini Previsualización si se selecciona nueva foto -->
+                <div id="detailLocalPreviewContainer" class="hidden absolute top-20 left-5 z-40 bg-black/80 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 flex items-center gap-2 shadow-2xl">
+                    <img id="detailLocalPreview" src="" class="w-10 h-12 object-cover rounded-xl">
+                    <button type="button" id="btnUpdateThumbnail" onclick="updateThumbnailOnly(event)" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider py-2 px-3 rounded-xl flex items-center gap-1.5">
+                        <span id="updateThumbSpinner" class="hidden animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
+                        Subir
+                    </button>
+                    <button type="button" onclick="removeSelectedImage(event, 'detailFile', 'detailLocalPreviewContainer', '')" class="text-white/50 hover:text-white p-1">
+                        <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+
+                <!-- Barras de Progreso de Versiones (Igual a la línea morada/gris de la referencia) -->
+                <div id="versionProgressBars" class="absolute bottom-3 left-6 right-6 flex gap-1.5 z-30">
+                    <!-- Inyectado por JS -->
+                </div>
+            </div>
+
+            <!-- SECCIÓN INFERIOR: INFORMACIÓN ESTILO PERFIL OSCURO -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pt-2 pb-6 flex flex-col justify-between bg-[#08080A]">
+                <div>
+                    <!-- Nombre + Insignia Verificada -->
+                    <div class="flex items-center gap-2 mb-1">
+                        <h2 id="detailName" class="font-montserrat text-2xl font-bold text-white tracking-tight">Título del Prompt</h2>
+                        <!-- Badge Azul Verificado -->
+                        <svg class="w-5 h-5 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                    </div>
+
+                    <!-- Subtítulo Ubicación / Meta -->
+                    <div class="flex items-center gap-1.5 text-white/60 text-xs mb-5">
+                        <svg class="w-3.5 h-3.5 text-white/50" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                        <span id="detailSubtitleMeta">Imagen · 1 Persona · v1</span>
+                    </div>
+
+                    <!-- Selector de Bloques (Solo si es Video) -->
+                    <div id="videoBlockSelectorContainer" class="hidden mb-4">
+                        <div class="text-[11px] text-white/40 font-medium mb-2">Secuencia de Video</div>
+                        <div class="flex gap-2">
+                            <button id="modalBlockBtn_b1" onclick="switchModalBlock('b1')" class="flex-1 py-2 text-xs font-bold rounded-full border border-white/10 transition-all">🎬 Bloque 1</button>
+                            <button id="modalBlockBtn_b2" onclick="switchModalBlock('b2')" class="flex-1 py-2 text-xs font-bold rounded-full border border-white/10 transition-all">⚡ Bloque 2</button>
+                            <button id="modalBlockBtn_b3" onclick="switchModalBlock('b3')" class="flex-1 py-2 text-xs font-bold rounded-full border border-white/10 transition-all">🏁 Bloque 3</button>
+                        </div>
+                    </div>
+
+                    <!-- Sección "About" (Texto del Prompt) -->
+                    <div class="mb-5">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-medium text-white/40">Prompt Activo</span>
+                            <button onclick="copyCurrentModalPrompt()" class="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Copiar texto</button>
+                        </div>
+                        <div class="bg-[#121216] border border-white/10 rounded-2xl p-3.5 max-h-36 overflow-y-auto custom-scrollbar">
+                            <p id="detailPromptBox" class="text-white/90 text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap select-all">Contenido...</p>
+                        </div>
+                    </div>
+
+                    <!-- Sección "My Basics" (Píldoras de Personas y Versiones) -->
+                    <div class="mb-5">
+                        <div class="text-[11px] font-medium text-white/40 mb-2.5">Configuración & Versiones</div>
+                        
+                        <div class="flex flex-wrap gap-2 items-center">
+                            <!-- Píldora Categoría -->
+                            <div class="bg-[#16161A] border border-white/10 rounded-full px-3.5 py-2 flex items-center gap-2 text-xs font-medium text-white">
+                                <span id="detailCategoryEmoji">🖼️</span>
+                                <span id="detailCategory">Imagen</span>
+                            </div>
+
+                            <!-- Píldora Selector de Personas -->
+                            <div class="relative bg-[#16161A] border border-white/10 hover:border-white/30 rounded-full px-3.5 py-2 flex items-center gap-1.5 text-xs font-medium text-white transition-colors">
+                                <span>👥</span>
+                                <select id="detailPeopleSelect" onchange="updatePeopleCount(event)" class="bg-transparent text-white font-medium outline-none cursor-pointer appearance-none pr-4">
+                                    <option value="1" class="bg-[#16161A] text-white">1 Persona</option>
+                                    <option value="2" class="bg-[#16161A] text-white">2 Personas</option>
+                                    <option value="3" class="bg-[#16161A] text-white">3 Personas</option>
+                                </select>
+                                <svg class="w-3 h-3 text-white/50 absolute right-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            </div>
+
+                            <!-- Píldoras de Versiones generadas dinámicamente -->
+                            <div id="detailVersionsContainer" class="contents">
+                                <!-- Inyectado por JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input Inferior para Agregar Nueva Versión -->
+                <div class="pt-3 border-t border-white/10">
+                    <div class="relative flex items-center">
+                        <textarea id="newVersionText" rows="1" placeholder="Escribir nueva versión del prompt..." class="w-full bg-[#16161A] border border-white/10 focus:border-indigo-500 text-white placeholder-white/35 outline-none py-3 pl-4 pr-12 rounded-2xl text-xs resize-none transition-colors custom-scrollbar"></textarea>
+                        <button id="saveVersionBtn" onclick="saveNewVersion()" class="absolute right-2 bg-indigo-600 hover:bg-indigo-500 text-white transition-all w-8 h-8 rounded-xl flex items-center justify-center shadow-md" title="Guardar nueva versión">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
+                            <span id="saveVersionSpinner" class="hidden absolute inset-0 bg-indigo-600 rounded-xl flex items-center justify-center">
+                                <div class="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full"></div>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL 1: NUEVO PROMPT -->
+    <!-- MODAL 1: NUEVO PROMPT (DARK MODE) -->
     <div id="newPromptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="modal-overlay absolute inset-0" onclick="closeNewPromptModal()"></div>
-        <div class="bg-white border border-gray-200 w-full max-w-md p-7 relative z-10 rounded-[32px] shadow-2xl max-h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold tracking-tight">Nuevo Recurso</h2>
-                <button onclick="closeNewPromptModal()" class="text-gray-400 hover:text-black bg-gray-50 rounded-full p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        <div class="bg-[#121216] border border-white/15 w-full max-w-md p-6 sm:p-7 relative z-10 rounded-[32px] shadow-2xl max-h-[90vh] flex flex-col text-white">
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="font-montserrat text-xl font-bold tracking-tight">Nuevo Prompt</h2>
+                <button onclick="closeNewPromptModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
             
-            <div class="overflow-y-auto pr-2 custom-scrollbar-dark space-y-5 flex-grow">
+            <div class="overflow-y-auto pr-1 custom-scrollbar space-y-4 flex-grow">
                 <div class="flex gap-3">
                     <div class="flex-grow">
-                        <label class="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Categoría</label>
-                        <select id="promptCategory" onchange="handleCategoryChange()" class="w-full bg-gray-50 border border-gray-200 rounded-xl outline-none py-3 px-4 text-sm font-semibold cursor-pointer appearance-none">
+                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Categoría</label>
+                        <select id="promptCategory" onchange="handleCategoryChange()" class="w-full bg-[#1C1C22] border border-white/10 rounded-2xl outline-none py-3 px-4 text-xs font-semibold text-white cursor-pointer">
                             <option value="imagenes">🖼️ Imágenes</option>
                             <option value="videos">🎬 Videos</option>
                         </select>
                     </div>
                     <div class="w-1/3">
-                        <label class="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Personas</label>
-                        <select id="promptPeople" class="w-full bg-gray-50 border border-gray-200 rounded-xl outline-none py-3 px-4 text-sm font-semibold cursor-pointer text-center appearance-none">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
+                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Personas</label>
+                        <select id="promptPeople" class="w-full bg-[#1C1C22] border border-white/10 rounded-2xl outline-none py-3 px-4 text-xs font-semibold text-white cursor-pointer text-center">
+                            <option value="1">1P</option>
+                            <option value="2">2P</option>
+                            <option value="3">3P</option>
                         </select>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Título del Prompt</label>
-                    <input type="text" id="promptName" placeholder="Ej: Retrato Dark Moody..." class="w-full bg-gray-50 border border-gray-200 rounded-xl outline-none py-3 px-4 text-sm font-semibold focus:border-black focus:ring-1 focus:ring-black transition-all">
+                    <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Título</label>
+                    <input type="text" id="promptName" placeholder="Ej: Cyberpunk Neon Portrait..." class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 rounded-2xl outline-none py-3 px-4 text-sm font-semibold text-white placeholder-white/30 transition-colors">
                 </div>
                 
-                <div id="singlePromptFieldContainer" class="space-y-5">
+                <!-- Campos Imágenes -->
+                <div id="singlePromptFieldContainer" class="space-y-4">
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Texto del Prompt</label>
-                        <textarea id="promptText" rows="4" placeholder="Describe la imagen..." class="w-full border border-gray-200 focus:border-black focus:ring-1 focus:ring-black outline-none p-4 rounded-xl resize-none custom-scrollbar-dark text-sm bg-gray-50 transition-all"></textarea>
+                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Prompt Texto</label>
+                        <textarea id="promptText" rows="4" placeholder="Escribe o pega el prompt..." class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 outline-none p-4 rounded-2xl resize-none custom-scrollbar text-xs text-white placeholder-white/30 transition-colors"></textarea>
                     </div>
 
+                    <!-- THUMBNAIL Upload -->
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Imagen de Referencia</label>
-                        <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors flex flex-col items-center justify-center relative min-h-[140px]" onclick="triggerFileInput('newPromptFile')">
+                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Imagen de Referencia</label>
+                        <div class="border-2 border-dashed border-white/15 hover:border-indigo-500/60 rounded-2xl p-5 text-center cursor-pointer bg-[#1C1C22]/50 hover:bg-[#1C1C22] transition-all flex flex-col items-center justify-center relative min-h-[135px]" onclick="triggerFileInput('newPromptFile')">
                             <input type="file" id="newPromptFile" class="hidden" accept="image/*" onchange="handleImageFileSelect(this, 'newPromptPreviewContainer', 'newPromptPreview')">
                             <div id="newPromptDropPlaceholder">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-8 w-8 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                <p class="text-xs text-gray-500 font-medium">Click para seleccionar imagen</p>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-7 w-7 text-white/30 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                <p class="text-xs font-medium text-white/40">Toca para elegir imagen</p>
                             </div>
-                            <div id="newPromptPreviewContainer" class="hidden absolute inset-2 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
+                            <div id="newPromptPreviewContainer" class="hidden absolute inset-2 bg-black rounded-xl overflow-hidden flex items-center justify-center">
                                 <img id="newPromptPreview" src="" class="h-full w-full object-cover object-center" alt="Previsualización">
-                                <button type="button" onclick="removeSelectedImage(event, 'newPromptFile', 'newPromptPreviewContainer', 'newPromptDropPlaceholder')" class="absolute top-2 right-2 glass-panel text-black rounded-full p-1.5 hover:bg-red-500 hover:text-white transition-colors shadow-sm">
+                                <button type="button" onclick="removeSelectedImage(event, 'newPromptFile', 'newPromptPreviewContainer', 'newPromptDropPlaceholder')" class="absolute top-2 right-2 bg-black/70 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors">
                                     <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                                 </button>
                             </div>
@@ -188,140 +362,29 @@
                     </div>
                 </div>
 
-                <div id="videoBlocksFieldContainer" class="hidden space-y-4">
+                <!-- Campos Videos -->
+                <div id="videoBlocksFieldContainer" class="hidden space-y-3">
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Bloque 1 (Inicio)</label>
-                        <textarea id="block1Text" rows="3" class="w-full border border-gray-200 outline-none p-3 rounded-xl text-sm bg-gray-50 focus:border-black transition-all"></textarea>
+                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1">Bloque 1 (Inicio)</label>
+                        <textarea id="block1Text" rows="2" class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-white"></textarea>
                     </div>
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Bloque 2 (Cuerpo)</label>
-                        <textarea id="block2Text" rows="3" class="w-full border border-gray-200 outline-none p-3 rounded-xl text-sm bg-gray-50 focus:border-black transition-all"></textarea>
+                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1">Bloque 2 (Cuerpo)</label>
+                        <textarea id="block2Text" rows="2" class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-white"></textarea>
                     </div>
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">Bloque 3 (Cierre)</label>
-                        <textarea id="block3Text" rows="3" class="w-full border border-gray-200 outline-none p-3 rounded-xl text-sm bg-gray-50 focus:border-black transition-all"></textarea>
+                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1">Bloque 3 (Cierre)</label>
+                        <textarea id="block3Text" rows="2" class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-white"></textarea>
                     </div>
                 </div>
             </div>
             
-            <div class="pt-6 mt-2">
-                <button onclick="saveNewPrompt()" class="w-full bg-black text-white rounded-xl text-sm font-bold uppercase tracking-wider py-4 flex justify-center items-center gap-2 shadow-lg shadow-black/20 hover:bg-gray-800 transition-all">
-                    <span id="savePromptSpinner" class="hidden animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                    Guardar Recurso
+            <div class="flex gap-2.5 pt-5 mt-3 border-t border-white/10">
+                <button onclick="closeNewPromptModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-white/70 rounded-2xl text-xs font-bold py-3.5 transition-colors">Cancelar</button>
+                <button onclick="saveNewPrompt()" class="flex-1 bg-white text-black hover:bg-gray-200 rounded-2xl text-xs font-bold py-3.5 flex justify-center items-center gap-2 transition-colors shadow-lg">
+                    <span id="savePromptSpinner" class="hidden animate-spin h-3.5 w-3.5 border-2 border-black border-t-transparent rounded-full"></span>
+                    Guardar
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 2: VISTA INMERSIVA (Detalles) -->
-    <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-end md:items-center justify-center bg-white md:bg-black/40 md:backdrop-blur-sm transition-all">
-        
-        <!-- Main Container: Full screen mobile, modal on desktop -->
-        <div class="w-full h-full md:h-auto md:max-h-[90vh] md:max-w-[420px] bg-[#F8F9FA] md:rounded-[40px] shadow-2xl relative flex flex-col overflow-hidden animate-slide-up">
-
-            <!-- Hero Image Section -->
-            <div class="relative w-full h-[45%] md:h-[350px] flex-shrink-0 bg-gray-200">
-                <img id="detailModalBg" src="" class="absolute inset-0 w-full h-full object-cover">
-                <!-- Soft gradient overlay -->
-                <div class="absolute inset-0 bg-gradient-to-t from-[#F8F9FA] via-transparent to-black/30 pointer-events-none"></div>
-
-                <!-- Floating Top Controls -->
-                <div class="absolute top-6 left-6 right-6 flex justify-between z-50">
-                    <button onclick="closeDetailModal()" class="w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center transition-all shadow-md">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                    
-                    <div class="flex gap-2">
-                        <!-- Update Image -->
-                        <div class="relative">
-                            <input type="file" id="detailFile" class="hidden" accept="image/*" onchange="handleImageFileSelect(this, 'detailLocalPreviewContainer', 'detailLocalPreview')">
-                            <button onclick="triggerFileInput('detailFile')" class="w-10 h-10 bg-black/20 hover:bg-black/40 backdrop-blur-md text-white rounded-full flex items-center justify-center transition-all shadow-md" title="Cambiar Imagen">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                            </button>
-                        </div>
-                        <!-- Delete Prompt -->
-                        <button onclick="deleteActivePrompt(event)" class="w-10 h-10 bg-red-500/80 hover:bg-red-500 backdrop-blur-md text-white rounded-full flex items-center justify-center transition-all shadow-md" title="Eliminar Recurso Permanente">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Preview Update Thumb UI -->
-                <div id="detailLocalPreviewContainer" class="hidden absolute top-20 right-6 z-50 w-16 aspect-[4/5] border border-white/40 rounded-xl overflow-hidden shadow-lg">
-                    <img id="detailLocalPreview" src="" class="w-full h-full object-cover object-center">
-                    <button type="button" onclick="removeSelectedImage(event, 'detailFile', 'detailLocalPreviewContainer', '')" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"><svg class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
-                </div>
-                <button type="button" id="btnUpdateThumbnail" onclick="updateThumbnailOnly(event)" class="hidden absolute top-40 right-6 z-50 bg-black text-white text-[9px] font-bold uppercase tracking-wider py-2 px-3 rounded-full flex items-center gap-2 shadow-lg">
-                    <span id="updateThumbSpinner" class="hidden animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
-                    Aplicar Foto
-                </button>
-
-                <!-- Overlay Title -->
-                <div class="absolute bottom-6 left-0 right-0 px-8 text-center z-20">
-                    <h2 id="detailName" class="century-gothic text-3xl font-bold text-white drop-shadow-md leading-tight tracking-wide">Título</h2>
-                </div>
-            </div>
-
-            <!-- Content Panel -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar bg-[#F8F9FA] flex flex-col p-6 space-y-6 rounded-t-[32px] -mt-5 relative z-10">
-                
-                <!-- Info Tags -->
-                <div class="flex justify-center items-center gap-2 mb-2">
-                    <span id="detailCategory" class="text-[9px] uppercase tracking-widest font-bold bg-white text-black border border-gray-200 px-3 py-1.5 rounded-full shadow-sm">CAT</span>
-                    
-                    <!-- People Selector -->
-                    <div class="relative inline-block group">
-                        <select id="detailPeopleSelect" onchange="updatePeopleCount(event)" class="text-[9px] uppercase tracking-widest font-bold bg-white text-black pl-3 pr-8 py-1.5 rounded-full border border-gray-200 shadow-sm outline-none cursor-pointer appearance-none hover:border-gray-300 transition-colors">
-                            <option value="1">1 PERSONA</option>
-                            <option value="2">2 PERSONAS</option>
-                            <option value="3">3 PERSONAS</option>
-                        </select>
-                        <svg class="w-3 h-3 absolute right-3 top-[7px] pointer-events-none text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                    </div>
-                </div>
-
-                <!-- Video Block Selector -->
-                <div id="videoBlockSelectorContainer" class="hidden bg-white p-1 rounded-full border border-gray-100 shadow-sm mx-auto w-[80%]">
-                    <div class="flex">
-                        <button id="modalBlockBtn_b1" onclick="switchModalBlock('b1')" class="flex-1 py-1.5 text-[10px] font-bold rounded-full transition-all text-gray-500">B1</button>
-                        <button id="modalBlockBtn_b2" onclick="switchModalBlock('b2')" class="flex-1 py-1.5 text-[10px] font-bold rounded-full transition-all text-gray-500">B2</button>
-                        <button id="modalBlockBtn_b3" onclick="switchModalBlock('b3')" class="flex-1 py-1.5 text-[10px] font-bold rounded-full transition-all text-gray-500">B3</button>
-                    </div>
-                </div>
-
-                <!-- Content Card (Plan details style) -->
-                <div class="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Versiones</span>
-                    </div>
-                    
-                    <div id="detailVersionsStats" class="flex flex-wrap gap-2 mb-4">
-                        <!-- Versions Pills injected here -->
-                    </div>
-                    
-                    <!-- Prompt Text Box -->
-                    <div class="w-full text-gray-700 text-xs md:text-sm leading-relaxed font-mono whitespace-pre-wrap max-h-[150px] overflow-y-auto custom-scrollbar border-t border-gray-50 pt-4">
-                        <p id="detailPromptBox">Contenido...</p>
-                    </div>
-                </div>
-
-                <!-- Actions Footer -->
-                <div class="mt-auto pt-2">
-                    <!-- Add Version Input -->
-                    <div class="relative">
-                        <textarea id="newVersionText" rows="2" placeholder="Describir nueva modificación..." class="w-full bg-white border border-gray-100 focus:border-gray-300 text-black outline-none p-4 rounded-[20px] text-xs mb-3 shadow-sm resize-none transition-all"></textarea>
-                        <button id="saveVersionBtn" onclick="saveNewVersion()" class="absolute bottom-6 right-3 bg-black text-white hover:bg-gray-800 transition-all w-8 h-8 rounded-full shadow-md flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
-                            <span id="saveVersionSpinner" class="hidden absolute inset-0 bg-black rounded-full flex items-center justify-center"><div class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></div></span>
-                        </button>
-                    </div>
-                    
-                    <!-- Primary Action Button -->
-                    <button onclick="copyCurrentModalPrompt()" class="w-full bg-[#111111] text-white rounded-full text-sm font-bold uppercase tracking-wider py-4 shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                        Copiar Prompt Activo
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -329,31 +392,33 @@
     <!-- MODAL 3: AJUSTES -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="modal-overlay absolute inset-0" onclick="closeSettingsModal()"></div>
-        <div class="bg-white w-full max-w-sm p-8 relative z-10 rounded-[32px] shadow-2xl flex flex-col border border-gray-200 text-center">
-            <h2 class="text-xl font-bold mb-2">Sincronización</h2>
-            <p class="text-xs text-gray-500 mb-6">Solo usa este botón si creaste prompts sin internet y necesitas forzar la subida a tu Google Sheet.</p>
-            <button onclick="pushLocalDataToSheets()" class="w-full bg-black text-white text-xs font-bold uppercase tracking-wider py-3.5 rounded-xl transition-all shadow-lg hover:bg-gray-800 mb-3">Forzar Subida</button>
-            <button onclick="closeSettingsModal()" class="bg-gray-50 hover:bg-gray-100 text-gray-600 border border-gray-200 text-xs font-bold uppercase tracking-widest py-3.5 rounded-xl transition-colors">Cancelar</button>
+        <div class="bg-[#121216] border border-white/15 w-full max-w-sm p-7 relative z-10 rounded-[32px] shadow-2xl text-center text-white">
+            <h2 class="font-montserrat text-lg font-bold mb-2">Sincronización Cloud</h2>
+            <p class="text-xs text-white/50 mb-6">Sincroniza tus prompts locales con tu hoja de Google Sheets y Google Drive.</p>
+            <button onclick="pushLocalDataToSheets()" class="w-full bg-white text-black text-xs font-bold uppercase tracking-wider py-3.5 rounded-2xl shadow-lg hover:bg-gray-200 transition-colors mb-2.5">Subir Datos a Drive</button>
+            <button onclick="fetchPrompts(true)" class="w-full bg-[#1C1C22] border border-white/10 text-white text-xs font-bold uppercase tracking-wider py-3.5 rounded-2xl hover:bg-white/10 transition-colors mb-2.5">Recargar desde Drive</button>
+            <button onclick="closeSettingsModal()" class="w-full bg-transparent text-white/50 hover:text-white text-xs font-bold uppercase tracking-wider py-2.5 rounded-xl transition-colors">Cerrar</button>
         </div>
     </div>
 
     <!-- MODAL CONFIRMACIÓN -->
     <div id="customConfirmModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
-        <div class="modal-overlay absolute inset-0 bg-black/60"></div>
-        <div class="bg-[#111111] border border-white/10 w-full max-w-xs p-6 relative z-10 rounded-3xl shadow-2xl text-center text-white">
-            <div class="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        <div class="modal-overlay absolute inset-0"></div>
+        <div class="bg-[#121216] border border-white/15 w-full max-w-xs p-6 relative z-10 rounded-[28px] shadow-2xl text-center text-white">
+            <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </div>
-            <h3 class="font-bold text-lg mb-1">Confirmar Acción</h3>
-            <p class="text-xs text-white/50 mb-6">¿Estás seguro de eliminar esto permanentemente?</p>
+            <h3 id="confirmModalTitle" class="font-montserrat font-bold text-base mb-1">Confirmar Acción</h3>
+            <p id="confirmModalDesc" class="text-xs text-white/50 mb-5">Esta acción es permanente y no se puede deshacer.</p>
             <div class="flex gap-2">
-                <button id="confirmYesBtn" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-xl text-xs font-bold uppercase transition-colors">Eliminar</button>
-                <button id="confirmNoBtn" class="flex-1 bg-white/10 hover:bg-white/20 text-white py-2.5 rounded-xl text-xs font-bold uppercase transition-colors">Cancelar</button>
+                <button id="confirmYesBtn" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors">Eliminar</button>
+                <button id="confirmNoBtn" class="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors">Cancelar</button>
             </div>
         </div>
     </div>
     
-    <div id="toast" class="fixed top-8 left-1/2 transform -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full text-[11px] font-bold tracking-widest uppercase opacity-0 transition-all duration-300 z-[70] shadow-[0_10px_30px_rgba(0,0,0,0.2)] pointer-events-none translate-y-[-20px]">
+    <!-- TOAST -->
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-white text-black px-5 py-2.5 rounded-full text-[11px] font-bold tracking-wider uppercase opacity-0 transition-all duration-300 z-[70] shadow-2xl pointer-events-none translate-y-[-20px]">
         Mensaje
     </div>
 
@@ -362,6 +427,7 @@
 
         let currentTab = 'imagenes';
         let currentFilter = 'all'; 
+        let searchQuery = '';
         let prompts = [];
         let activePromptId = null;
         let activeModalVersionIndex = 0;
@@ -369,6 +435,63 @@
 
         let base64UploadCache = { data: null, name: "" };
         let confirmCallback = null;
+
+        // Datos iniciales de muestra por si el preview de Canvas está sin conexión o aún no carga Drive
+        const demoFallbackPrompts = [
+            {
+                id: 1001,
+                category: 'imagenes',
+                name: 'Sillón piernas extendidas',
+                peopleCount: 2,
+                personas: 2,
+                date: '18 Oct 26',
+                currentVersionIndex: 0,
+                demoImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+                versions: [
+                    { id: 1, text: 'Editorial flash photography, couple sitting on vintage sofa, natural skin texture, 35mm film grain, moody warm indoor lighting --ar 4:5', date: '18 Oct 26' },
+                    { id: 2, text: 'High fashion editorial, couple lounging on textured couch, soft shadows, candid expression, Kodak Portra 400 --ar 4:5', date: '18 Oct 26' }
+                ]
+            },
+            {
+                id: 1002,
+                category: 'imagenes',
+                name: 'Dinneroom Bar',
+                peopleCount: 2,
+                personas: 2,
+                date: '18 Oct 26',
+                currentVersionIndex: 0,
+                demoImg: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+                versions: [
+                    { id: 1, text: 'Cinematic night portrait at a dimly lit luxury bar counter, warm tungsten pendant lights, shallow depth of field, luxury aesthetic.', date: '18 Oct 26' }
+                ]
+            },
+            {
+                id: 1003,
+                category: 'imagenes',
+                name: 'Taburete Studio',
+                peopleCount: 1,
+                personas: 1,
+                date: '18 Oct 26',
+                currentVersionIndex: 0,
+                demoImg: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+                versions: [
+                    { id: 1, text: 'Minimalist studio portrait on wooden stool, pastel cyan backdrop, tailored white blazer and pleated skirt, soft diffused key light.', date: '18 Oct 26' }
+                ]
+            },
+            {
+                id: 1004,
+                category: 'imagenes',
+                name: 'Park Floor Autumn',
+                peopleCount: 1,
+                personas: 1,
+                date: '18 Oct 26',
+                currentVersionIndex: 0,
+                demoImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+                versions: [
+                    { id: 1, text: 'High angle flash portrait sitting near wooden stairs outdoors at night, autumn leaves on ground, crisp direct flash look.', date: '18 Oct 26' }
+                ]
+            }
+        ];
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -379,7 +502,7 @@
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translate(-50%, -20px)';
-            }, 2500);
+            }, 2400);
         }
 
         function getFormattedDate() {
@@ -387,8 +510,28 @@
         }
 
         function executeCopy(text) {
-            const temp = document.createElement("textarea"); temp.value = text;
-            document.body.appendChild(temp); temp.select(); document.execCommand('copy'); document.body.removeChild(temp);
+            const temp = document.createElement("textarea");
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+        }
+
+        function handleSearchInput(val) {
+            searchQuery = val.trim().toLowerCase();
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (clearBtn) {
+                if (searchQuery.length > 0) clearBtn.classList.remove('hidden');
+                else clearBtn.classList.add('hidden');
+            }
+            renderPrompts(false);
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            if (input) input.value = '';
+            handleSearchInput('');
         }
 
         function switchTab(tab) {
@@ -397,30 +540,50 @@
             renderPrompts(true);
         }
 
+        function toggleFilterMenu() {
+            const menu = document.getElementById('filterDropdown');
+            menu.classList.toggle('hidden');
+        }
+
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('filterBtnContainer');
+            if (container && !container.contains(e.target)) {
+                document.getElementById('filterDropdown')?.classList.add('hidden');
+            }
+        });
+
         function switchPeopleFilter(filter) {
             currentFilter = String(filter); 
             updateFloatingMenuStyles();
             renderPrompts(true); 
+            document.getElementById('filterDropdown').classList.add('hidden');
         }
 
         function updateFloatingMenuStyles() {
             const bImg = document.getElementById('tabBtn_imagenes');
             const bVid = document.getElementById('tabBtn_videos');
             if (currentTab === 'imagenes') {
-                if(bImg) { bImg.classList.add('text-black'); bImg.classList.remove('text-gray-400'); }
-                if(bVid) { bVid.classList.add('text-gray-400'); bVid.classList.remove('text-black'); }
+                bImg.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-white text-black shadow-sm";
+                bVid.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-white/60 hover:text-white";
             } else {
-                if(bVid) { bVid.classList.add('text-black'); bVid.classList.remove('text-gray-400'); }
-                if(bImg) { bImg.classList.add('text-gray-400'); bImg.classList.remove('text-black'); }
+                bVid.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-white text-black shadow-sm";
+                bImg.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-white/60 hover:text-white";
+            }
+
+            const activeDot = document.getElementById('filterActiveDot');
+            if (currentFilter === 'all') {
+                activeDot.classList.add('hidden');
+            } else {
+                activeDot.classList.remove('hidden');
             }
 
             ['all', '1', '2', '3'].forEach(f => {
                 const el = document.getElementById('filterBtn_' + f);
                 if (el) {
                     if (currentFilter === f) {
-                        el.className = "px-3 py-1.5 text-[11px] font-bold rounded-full bg-white shadow-sm border border-gray-200 text-black transition-all";
+                        el.className = "flex-1 px-3 py-2 text-[11px] font-bold rounded-xl bg-white text-black transition-all";
                     } else {
-                        el.className = "px-3 py-1.5 text-[11px] font-bold rounded-full text-gray-500 hover:text-black transition-all";
+                        el.className = "flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all";
                     }
                 }
             });
@@ -429,10 +592,7 @@
         function renderPrompts(triggerAnimation = false) {
             const container = document.getElementById('promptCatalog');
             const emptyState = document.getElementById('emptyState');
-            const counter = document.getElementById('promptCountLabel');
             if (!container || !emptyState) return;
-
-            if(triggerAnimation) { container.innerHTML = ''; }
 
             const filtered = prompts.filter(p => {
                 if (p.category !== currentTab) return false;
@@ -440,10 +600,18 @@
                     const c = String(parseInt(p.peopleCount || p.personas) || 1);
                     if (c !== currentFilter) return false;
                 }
+                if (searchQuery) {
+                    const nameMatch = (p.name || '').toLowerCase().includes(searchQuery);
+                    let textMatch = false;
+                    if (p.category === 'imagenes' && Array.isArray(p.versions)) {
+                        textMatch = p.versions.some(v => (v.text || '').toLowerCase().includes(searchQuery));
+                    } else if (p.blocks) {
+                        textMatch = ['b1','b2','b3'].some(b => (p.blocks[b]?.versions || []).some(v => (v.text || '').toLowerCase().includes(searchQuery)));
+                    }
+                    if (!nameMatch && !textMatch) return false;
+                }
                 return true;
             });
-
-            if(counter) counter.textContent = `${filtered.length} recursos`;
 
             if (filtered.length === 0) {
                 container.innerHTML = '';
@@ -455,74 +623,79 @@
             
             const htmlContent = filtered.map((prompt, index) => {
                 const pCountVal = parseInt(prompt.peopleCount || prompt.personas) || 1;
-                const pCountBadge = `<div class="absolute top-4 right-4 z-20"><span class="bg-black/30 backdrop-blur-md text-white border border-white/20 text-[10px] font-bold px-3 py-1.5 rounded-full shadow-sm">${pCountVal}P</span></div>`;
-
-                const animationDelay = triggerAnimation ? `style="animation-delay: ${index * 0.05}s;"` : '';
+                const animationDelay = triggerAnimation ? `style="animation-delay: ${index * 0.04}s;"` : '';
                 const animationClass = triggerAnimation ? 'animate-fade-in' : '';
+                
+                // Efecto escalonado (staggered) igual a la imagen de referencia en columnas pares
+                const staggerClass = (index % 2 === 1) ? 'mt-5 sm:mt-0' : '';
 
-                if (prompt.category === 'imagenes') {
-                    let bgContent = `
-                        <div class="absolute inset-0 bg-gray-200 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                        </div>
-                    `;
+                let imgTag = `
+                    <div class="absolute inset-0 bg-gradient-to-br from-[#1E1E28] to-[#101015] flex items-center justify-center">
+                        <svg class="w-10 h-10 text-white/15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    </div>`;
                     
-                    if (prompt.thumbnailId) {
-                        bgContent = `<img src="https://drive.google.com/thumbnail?id=${prompt.thumbnailId}&sz=w1000" class="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700" alt="Thumbnail">`;
-                    }
+                if (prompt.thumbnailId) {
+                    imgTag = `<img src="https://drive.google.com/thumbnail?id=${prompt.thumbnailId}&sz=w800" referrerpolicy="no-referrer" loading="lazy" class="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 z-10" alt="${prompt.name}" onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=download&id=${prompt.thumbnailId}';">`;
+                } else if (prompt.demoImg) {
+                    imgTag = `<img src="${prompt.demoImg}" loading="lazy" class="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 z-10" alt="${prompt.name}">`;
+                }
 
-                    return `
-                        <div onclick="openImmersiveDetail(${prompt.id})" class="relative w-full aspect-[4/5] rounded-[32px] overflow-hidden group shadow-lg bg-black cursor-pointer ${animationClass}" ${animationDelay}>
-                            ${bgContent}
-                            <!-- Gradiente superpuesto como en la referencia -->
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-90 transition-opacity duration-300 pointer-events-none"></div>
-                            
-                            ${pCountBadge}
+                // Calculamos versión activa para mostrar en el subtítulo
+                let activeVerNum = 1;
+                if (prompt.category === 'imagenes' && Array.isArray(prompt.versions)) {
+                    const idx = prompt.currentVersionIndex || 0;
+                    activeVerNum = prompt.versions[idx]?.id || 1;
+                }
 
-                            <!-- Panel inferior -->
-                            <div class="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between gap-4 transform group-hover:-translate-y-1 transition-transform duration-300">
-                                <h3 class="century-gothic font-bold text-xl md:text-2xl text-white leading-tight drop-shadow-md flex-1">${prompt.name}</h3>
-                                
-                                <button onclick="copyCardPrompt(${prompt.id}, event)" class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/20 text-white rounded-full transition-colors shadow-lg" title="Copiar última versión">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Vista Video adaptada al nuevo estilo
+                // Selector superior si es video
+                let topVideoPills = '';
+                if (prompt.category === 'videos') {
                     const activeBlockId = prompt.activeBlockId || 'b1';
-
-                    return `
-                        <div onclick="openImmersiveDetail(${prompt.id})" class="relative w-full aspect-[4/5] rounded-[32px] overflow-hidden group shadow-lg bg-[#1a1a1c] border border-gray-800 cursor-pointer ${animationClass}" ${animationDelay}>
-                            <div class="absolute inset-0 bg-gradient-to-br from-[#2a2a2c] to-[#111111] opacity-80"></div>
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90 pointer-events-none"></div>
-
-                            <div class="absolute top-4 left-4 z-20 flex bg-white/10 backdrop-blur-md rounded-full p-1 border border-white/10 shadow-sm" onclick="event.stopPropagation()">
-                                <button onclick="switchCardBlock(${prompt.id}, 'b1', event)" class="w-8 h-8 text-[9px] font-bold rounded-full transition-all ${activeBlockId === 'b1' ? 'bg-white text-black' : 'text-white/60 hover:text-white'}">B1</button>
-                                <button onclick="switchCardBlock(${prompt.id}, 'b2', event)" class="w-8 h-8 text-[9px] font-bold rounded-full transition-all ${activeBlockId === 'b2' ? 'bg-white text-black' : 'text-white/60 hover:text-white'}">B2</button>
-                                <button onclick="switchCardBlock(${prompt.id}, 'b3', event)" class="w-8 h-8 text-[9px] font-bold rounded-full transition-all ${activeBlockId === 'b3' ? 'bg-white text-black' : 'text-white/60 hover:text-white'}">B3</button>
-                            </div>
-
-                            ${pCountBadge}
-
-                            <div class="absolute bottom-0 left-0 right-0 p-6 flex items-end justify-between gap-4 transform group-hover:-translate-y-1 transition-transform duration-300">
-                                <h3 class="century-gothic font-bold text-xl md:text-2xl text-white leading-tight drop-shadow-md flex-1">${prompt.name}</h3>
-                                
-                                <button onclick="copyCardPrompt(${prompt.id}, event)" class="w-12 h-12 flex-shrink-0 flex items-center justify-center bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/20 text-white rounded-full transition-colors shadow-lg" title="Copiar bloque activo">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                </button>
-                            </div>
+                    topVideoPills = `
+                        <div class="absolute top-3 left-3 right-3 z-20 flex bg-black/55 backdrop-blur-md rounded-full p-0.5 border border-white/15" onclick="event.stopPropagation()">
+                            <button onclick="switchCardBlock(${prompt.id}, 'b1', event)" class="flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${activeBlockId === 'b1' ? 'bg-white text-black' : 'text-white/70 hover:text-white'}">B1</button>
+                            <button onclick="switchCardBlock(${prompt.id}, 'b2', event)" class="flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${activeBlockId === 'b2' ? 'bg-white text-black' : 'text-white/70 hover:text-white'}">B2</button>
+                            <button onclick="switchCardBlock(${prompt.id}, 'b3', event)" class="flex-1 py-1 text-[9px] font-bold rounded-full transition-all ${activeBlockId === 'b3' ? 'bg-white text-black' : 'text-white/70 hover:text-white'}">B3</button>
                         </div>
                     `;
                 }
+
+                return `
+                    <div onclick="openImmersiveDetail(${prompt.id})" class="relative w-full aspect-[3/4] rounded-[28px] overflow-hidden group border border-white/10 hover:border-white/25 shadow-lg transition-all duration-300 bg-[#141418] cursor-pointer ${staggerClass} ${animationClass}" ${animationDelay}>
+                        ${imgTag}
+                        ${topVideoPills}
+                        
+                        <!-- Gradiente oscuro en la base estilo Discover Reference -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent z-10 pointer-events-none"></div>
+
+                        <!-- Información Inferior estilo "Sarah J, 25" + Botón Circular Derecha -->
+                        <div class="absolute bottom-3.5 left-3.5 right-3.5 z-20 flex items-end justify-between gap-2">
+                            <div class="min-w-0 flex-1">
+                                <!-- Subtítulo con Pin: Personas + Versión -->
+                                <div class="flex items-center gap-1 text-[10px] font-medium text-white/75 mb-0.5">
+                                    <svg class="w-3 h-3 text-white/80 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                                    <span class="truncate">${pCountVal} ${pCountVal === 1 ? 'Persona' : 'Personas'} · v${activeVerNum}</span>
+                                </div>
+
+                                <!-- Nombre del Prompt + Check Azul -->
+                                <div class="flex items-center gap-1.5">
+                                    <h3 class="font-montserrat font-bold text-[13px] sm:text-[15px] text-white leading-tight line-clamp-2">${prompt.name}</h3>
+                                    <svg class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- Botón Circular Copiar (como el botón de corazón en la referencia) -->
+                            <button onclick="copyCardPrompt(${prompt.id}, event)" class="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 flex items-center justify-center bg-black/45 hover:bg-white hover:text-black backdrop-blur-md border border-white/15 text-white rounded-full transition-all shadow-lg active:scale-90" title="Copiar última versión">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
             }).join('');
 
-            if (triggerAnimation) {
-                setTimeout(() => { container.innerHTML = htmlContent; }, 10);
-            } else {
-                container.innerHTML = htmlContent;
-            }
+            container.innerHTML = htmlContent;
         }
 
         function copyCardPrompt(promptId, event) {
@@ -538,9 +711,12 @@
                 const bId = prompt.activeBlockId || 'b1';
                 const ver = prompt.blocks[bId].versions[prompt.blocks[bId].currentIdx || 0];
                 if (ver) textToCopy = ver.text;
-                else return showToast("Bloque vacío."); 
+                else return showToast("Bloque vacío"); 
             }
-            if (textToCopy) { executeCopy(textToCopy); showToast(`Copiado al portapapeles`); }
+            if (textToCopy) {
+                executeCopy(textToCopy);
+                showToast("¡Prompt Copiado!");
+            }
         }
 
         function switchCardBlock(promptId, blockId, event) {
@@ -548,13 +724,14 @@
             const prompt = prompts.find(p => p.id === promptId);
             if (prompt) { 
                 prompt.activeBlockId = blockId; 
-                localStorage.setItem('editorial_prompts_v3', JSON.stringify(prompts)); 
+                localStorage.setItem('editorial_prompts_v6', JSON.stringify(prompts)); 
                 renderPrompts(false); 
             }
         }
 
         function triggerFileInput(id) {
-            const el = document.getElementById(id); if (el) el.click();
+            const el = document.getElementById(id);
+            if (el) el.click();
         }
 
         function handleImageFileSelect(input, previewContainerId, previewImgId) {
@@ -563,21 +740,26 @@
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = e => {
-                const img = new Image(); img.src = e.target.result;
+                const img = new Image();
+                img.src = e.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     let w = img.width, h = img.height;
-                    const max = 400;
-                    if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                    const max = 900; 
+                    if (w > h) { if (w > max) { h *= max/w; w = max; } }
+                    else { if (h > max) { w *= max/h; h = max; } }
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
-                    base64UploadCache.data = base64; base64UploadCache.name = file.name;
+                    
+                    const base64 = canvas.toDataURL('image/jpeg', 0.85); 
+                    base64UploadCache.data = base64;
+                    base64UploadCache.name = file.name;
                     
                     document.getElementById(previewImgId).src = base64;
                     document.getElementById(previewContainerId).classList.remove('hidden');
-                    if (previewContainerId === 'newPromptPreviewContainer') document.getElementById('newPromptDropPlaceholder').classList.add('hidden');
-                    if (previewContainerId === 'detailLocalPreviewContainer') document.getElementById('btnUpdateThumbnail').classList.remove('hidden');
+                    if (previewContainerId === 'newPromptPreviewContainer') {
+                        document.getElementById('newPromptDropPlaceholder').classList.add('hidden');
+                    }
                 };
             };
         }
@@ -587,7 +769,6 @@
             const fEl = document.getElementById(fileId); if (fEl) fEl.value = "";
             const cEl = document.getElementById(cId); if (cEl) cEl.classList.add('hidden');
             if (pId) { const pEl = document.getElementById(pId); if (pEl) pEl.classList.remove('hidden'); }
-            const upBtn = document.getElementById('btnUpdateThumbnail'); if (upBtn) upBtn.classList.add('hidden');
             base64UploadCache.data = null;
         }
 
@@ -595,43 +776,51 @@
             if (event) event.stopPropagation();
             const prompt = prompts.find(p => p.id === activePromptId);
             if (!prompt || !base64UploadCache.data) return;
-            const spin = document.getElementById('updateThumbSpinner'); spin.classList.remove('hidden');
+            const spin = document.getElementById('updateThumbSpinner');
+            spin.classList.remove('hidden');
+            // Actualización optimista visual inmediata
+            prompt.demoImg = base64UploadCache.data;
             const success = await apiSavePrompt(prompt);
             spin.classList.add('hidden');
-            if (success) {
-                removeSelectedImage(null, 'detailFile', 'detailLocalPreviewContainer', null);
-                renderImmersiveDetailContent(); renderPrompts(false); showToast("Imagen actualizada");
-            }
+            removeSelectedImage(null, 'detailFile', 'detailLocalPreviewContainer', null);
+            renderImmersiveDetailContent();
+            renderPrompts(false);
+            showToast(success ? "Imagen guardada en Drive" : "Imagen actualizada localmente");
         }
 
         async function updatePeopleCount(event) {
             const prompt = prompts.find(x => x.id === activePromptId);
             if (!prompt) return;
             const newCount = parseInt(event.target.value) || 1;
-            prompt.peopleCount = newCount; prompt.personas = newCount;
-            showToast("Actualizando...");
-            const success = await apiSavePrompt(prompt);
-            if(success) { renderPrompts(false); showToast("Guardado"); }
+            prompt.peopleCount = newCount;
+            prompt.personas = newCount;
+            renderImmersiveDetailContent();
+            renderPrompts(false);
+            showToast("Guardando cambio...");
+            await apiSavePrompt(prompt);
+            showToast("Personas actualizadas");
         }
 
         function openImmersiveDetail(id) {
-            const p = prompts.find(x => x.id === id); if (!p) return;
-            activePromptId = id; base64UploadCache.data = null;
+            const p = prompts.find(x => x.id === id);
+            if (!p) return;
+            activePromptId = id;
+            base64UploadCache.data = null;
             if (p.category === 'imagenes') activeModalVersionIndex = p.currentVersionIndex || 0;
             else activeModalBlockId = p.activeBlockId || 'b1';
             
             document.getElementById('detailModal').classList.remove('hidden');
-            // Prevent body scroll
             document.body.style.overflow = 'hidden';
             renderImmersiveDetailContent();
         }
 
         function closeDetailModal() {
             document.getElementById('detailModal').classList.add('hidden');
-            document.body.style.overflow = 'auto'; // Restore scroll
+            document.body.style.overflow = 'auto'; 
             document.getElementById('newVersionText').value = '';
             removeSelectedImage(null, 'detailFile', 'detailLocalPreviewContainer', null);
-            activePromptId = null; renderPrompts(false);
+            activePromptId = null;
+            renderPrompts(false);
         }
 
         function switchModalBlock(bId) {
@@ -643,107 +832,143 @@
         
         function switchModalVersion(idx) {
             const p = prompts.find(x => x.id === activePromptId);
-            if (p.category === 'imagenes') p.currentVersionIndex = idx; else p.blocks[activeModalBlockId].currentIdx = idx;
-            activeModalVersionIndex = idx;
+            if (!p) return;
+            if (p.category === 'imagenes') {
+                p.currentVersionIndex = idx;
+                activeModalVersionIndex = idx;
+            } else {
+                p.blocks[activeModalBlockId].currentIdx = idx;
+            }
+            localStorage.setItem('editorial_prompts_v6', JSON.stringify(prompts));
             renderImmersiveDetailContent();
         }
 
-        function deleteModalVersion(index, event) {
-            if(event) event.stopPropagation();
+        function deleteCurrentVersion(event) {
+            if (event) event.stopPropagation();
             const p = prompts.find(x => x.id === activePromptId);
-            if(!p) return;
-            
+            if (!p) return;
+
+            let versionsArr = (p.category === 'imagenes') ? p.versions : p.blocks[activeModalBlockId].versions;
+            let currentIdx = (p.category === 'imagenes') ? activeModalVersionIndex : (p.blocks[activeModalBlockId].currentIdx || 0);
+
+            if (versionsArr.length <= 1) {
+                return showToast("Debe existir al menos 1 versión");
+            }
+
+            const verToDelete = versionsArr[currentIdx];
+            document.getElementById('confirmModalTitle').textContent = `¿Eliminar versión v${verToDelete.id}?`;
+            document.getElementById('confirmModalDesc').textContent = "Esta iteración del prompt se borrará permanentemente.";
             document.getElementById('customConfirmModal').classList.remove('hidden');
+
             confirmCallback = async () => {
+                versionsArr.splice(currentIdx, 1);
                 if (p.category === 'imagenes') {
-                    if(p.versions.length <= 1) return showToast("No se puede eliminar la única versión");
-                    p.versions.splice(index, 1);
-                    if(activeModalVersionIndex === index) { activeModalVersionIndex = Math.max(0, index - 1); }
-                    else if (activeModalVersionIndex > index) { activeModalVersionIndex--; }
+                    activeModalVersionIndex = Math.max(0, currentIdx - 1);
                     p.currentVersionIndex = activeModalVersionIndex;
                 } else {
-                    const bData = p.blocks[activeModalBlockId];
-                    if(bData.versions.length <= 1) return showToast("No se puede eliminar la única versión");
-                    bData.versions.splice(index, 1);
-                    if(bData.currentIdx === index) { bData.currentIdx = Math.max(0, index - 1); } 
-                    else if (bData.currentIdx > index) { bData.currentIdx--; }
-                    activeModalVersionIndex = bData.currentIdx;
+                    p.blocks[activeModalBlockId].currentIdx = Math.max(0, currentIdx - 1);
                 }
-                showToast("Borrando versión...");
-                await apiSavePrompt(p);
                 renderImmersiveDetailContent();
-                renderPrompts(false);
+                await apiSavePrompt(p);
+                showToast("Versión eliminada");
             };
         }
 
         function renderImmersiveDetailContent() {
-            const p = prompts.find(x => x.id === activePromptId); if (!p) return;
+            const p = prompts.find(x => x.id === activePromptId);
+            if (!p) return;
 
+            const pCount = parseInt(p.peopleCount || p.personas) || 1;
             document.getElementById('detailCategory').textContent = p.category === 'imagenes' ? 'Imagen' : 'Video';
+            document.getElementById('detailCategoryEmoji').textContent = p.category === 'imagenes' ? '🖼️' : '🎬';
+            
             const peopleSel = document.getElementById('detailPeopleSelect');
-            if (peopleSel) peopleSel.value = parseInt(p.peopleCount || p.personas) || 1;
+            if (peopleSel) peopleSel.value = pCount;
             document.getElementById('detailName').textContent = p.name;
             
-            // Set Background
+            // Imagen de fondo del modal
             const bgEl = document.getElementById('detailModalBg');
+            const fallbackEl = document.getElementById('detailModalBgFallback');
             if (p.thumbnailId) {
-                bgEl.src = `https://drive.google.com/thumbnail?id=${p.thumbnailId}&sz=w1000`;
                 bgEl.style.display = 'block';
+                fallbackEl.classList.add('hidden');
+                bgEl.src = `https://drive.google.com/thumbnail?id=${p.thumbnailId}&sz=w1000`;
+                bgEl.onerror = function() { 
+                    this.onerror = function() {
+                        this.style.display = 'none';
+                        fallbackEl.classList.remove('hidden');
+                    };
+                    this.src = `https://drive.google.com/uc?export=download&id=${p.thumbnailId}`; 
+                };
+            } else if (p.demoImg) {
+                bgEl.style.display = 'block';
+                fallbackEl.classList.add('hidden');
+                bgEl.src = p.demoImg;
             } else {
-                bgEl.style.display = 'none'; // Fallback
+                bgEl.style.display = 'none';
+                fallbackEl.classList.remove('hidden');
             }
 
+            // Determinar arreglo de versiones e índice activo
+            let versionsArr = [];
+            let cIdx = 0;
             const vBlockSel = document.getElementById('videoBlockSelectorContainer');
-            
-            // Refactored Helper to build light-theme "Stats/Pills" layout
-            const generateVersionsStatsHTML = (versionsArr, cIdx) => {
-                if(versionsArr.length === 0) return `<div class="w-full text-center text-gray-400 text-[10px] italic py-2">Sin versiones</div>`;
-                const canDelete = versionsArr.length > 1;
-                return versionsArr.map((v, i) => {
-                    const isActive = i === cIdx;
-                    const activeBadge = isActive ? `<span class="absolute -top-1.5 left-1/2 transform -translate-x-1/2 bg-black text-white text-[7px] font-bold px-1.5 py-0.5 rounded-full z-10 shadow-sm">ACTIVA</span>` : '';
-                    return `
-                        <div class="flex items-center gap-2 px-3 py-2 rounded-xl cursor-pointer transition-all relative group ${isActive ? 'bg-gray-100 border border-gray-200 shadow-inner' : 'bg-white border border-gray-100 hover:bg-gray-50'}" onclick="switchModalVersion(${i})">
-                            ${activeBadge}
-                            <div class="flex flex-col text-center">
-                                <span class="text-xs font-bold ${isActive ? 'text-black' : 'text-gray-500'}">v${v.id}</span>
-                                <span class="text-[8px] uppercase tracking-wider text-gray-400">${v.date || '---'}</span>
-                            </div>
-                            ${canDelete ? `<button onclick="deleteModalVersion(${i}, event)" class="ml-1 text-gray-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100 p-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>` : ''}
-                        </div>
-                    `;
-                }).join('');
-            };
 
             if (p.category === 'imagenes') {
                 vBlockSel.classList.add('hidden');
-                if (activeModalVersionIndex >= p.versions.length) activeModalVersionIndex = Math.max(0, p.versions.length - 1);
-                const ver = p.versions[activeModalVersionIndex] || p.versions[0];
-                document.getElementById('detailPromptBox').textContent = ver ? ver.text : "Vacío";
-                document.getElementById('detailVersionsStats').innerHTML = generateVersionsStatsHTML(p.versions, activeModalVersionIndex);
+                versionsArr = p.versions || [];
+                if (activeModalVersionIndex >= versionsArr.length) activeModalVersionIndex = Math.max(0, versionsArr.length - 1);
+                cIdx = activeModalVersionIndex;
             } else {
                 vBlockSel.classList.remove('hidden');
                 ['b1','b2','b3'].forEach(b => {
                     const el = document.getElementById(`modalBlockBtn_${b}`);
-                    if(el) el.className = b === activeModalBlockId ? "flex-1 py-1.5 text-[10px] font-bold rounded-full transition-all bg-black text-white shadow-sm" : "flex-1 py-1.5 text-[10px] font-bold rounded-full transition-all text-gray-500 hover:text-black hover:bg-gray-50";
+                    if(el) {
+                        el.className = (b === activeModalBlockId)
+                            ? "flex-1 py-2 text-xs font-bold rounded-full bg-white text-black transition-all shadow"
+                            : "flex-1 py-2 text-xs font-bold rounded-full bg-[#16161A] text-white/60 border border-white/10 hover:text-white transition-all";
+                    }
                 });
-                
-                const bData = p.blocks[activeModalBlockId];
-                if (bData.currentIdx >= bData.versions.length) bData.currentIdx = Math.max(0, bData.versions.length - 1);
-                const cIdx = bData.currentIdx || 0;
-                
-                const ver = bData.versions[cIdx];
-                document.getElementById('detailPromptBox').textContent = ver ? ver.text : "Vacío.";
-                document.getElementById('detailVersionsStats').innerHTML = generateVersionsStatsHTML(bData.versions, cIdx);
+                const bData = p.blocks[activeModalBlockId] || { versions: [], currentIdx: 0 };
+                versionsArr = bData.versions || [];
+                if ((bData.currentIdx || 0) >= versionsArr.length) bData.currentIdx = Math.max(0, versionsArr.length - 1);
+                cIdx = bData.currentIdx || 0;
             }
+
+            const activeVer = versionsArr[cIdx];
+            document.getElementById('detailPromptBox').textContent = activeVer ? activeVer.text : "Sin contenido en este bloque.";
+            document.getElementById('detailSubtitleMeta').textContent = `${p.category === 'imagenes' ? 'Imagen' : 'Video'} · ${pCount} ${pCount === 1 ? 'Persona' : 'Personas'} · ${activeVer ? 'v' + activeVer.id : 'Sin versión'}`;
+
+            // Renderizar barras de progreso superiores estilo "Stories / Tinder Profile"
+            const progressContainer = document.getElementById('versionProgressBars');
+            if (versionsArr.length > 0) {
+                progressContainer.innerHTML = versionsArr.map((v, i) => `
+                    <button onclick="switchModalVersion(${i})" class="h-1 flex-1 rounded-full transition-all ${i === cIdx ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]' : 'bg-white/25 hover:bg-white/50'}" title="Versión v${v.id}"></button>
+                `).join('');
+            } else {
+                progressContainer.innerHTML = '';
+            }
+
+            // Renderizar Píldoras de Versiones en "My Basics"
+            const pillsContainer = document.getElementById('detailVersionsContainer');
+            pillsContainer.innerHTML = versionsArr.map((v, i) => {
+                const isActive = i === cIdx;
+                return `
+                    <button onclick="switchModalVersion(${i})" class="rounded-full px-3.5 py-2 flex items-center gap-1.5 text-xs font-semibold transition-all ${isActive ? 'bg-indigo-600 text-white border border-indigo-400 shadow-md' : 'bg-[#16161A] text-white/65 border border-white/10 hover:border-white/30 hover:text-white'}">
+                        <span>⚡ v${v.id}</span>
+                        ${v.date ? `<span class="text-[10px] opacity-65">· ${v.date}</span>` : ''}
+                    </button>
+                `;
+            }).join('');
         }
 
         async function saveNewVersion() {
             const p = prompts.find(x => x.id === activePromptId);
             const textEl = document.getElementById('newVersionText');
-            if (!textEl.value.trim()) return showToast("Escribe algo");
+            if (!p || !textEl.value.trim()) return showToast("Escribe el texto de la nueva versión");
             
-            const spin = document.getElementById('saveVersionSpinner'); spin.classList.remove('hidden');
+            const spin = document.getElementById('saveVersionSpinner');
+            spin.classList.remove('hidden');
             
             if (p.category === 'imagenes') {
                 const nextId = (p.versions.length > 0) ? Math.max(...p.versions.map(v => v.id)) + 1 : 1;
@@ -756,36 +981,50 @@
                 bData.currentIdx = bData.versions.length - 1;
             }
             
+            textEl.value = '';
+            renderImmersiveDetailContent();
             await apiSavePrompt(p);
-            spin.classList.add('hidden'); textEl.value = '';
-            renderImmersiveDetailContent(); renderPrompts(false);
+            spin.classList.add('hidden');
+            renderPrompts(false);
+            showToast("Nueva versión guardada");
         }
 
         function copyCurrentModalPrompt() {
             const p = prompts.find(x => x.id === activePromptId);
+            if (!p) return;
             let txt = "";
             if (p.category === 'imagenes') {
-                const v = p.versions[activeModalVersionIndex]; if(v){ txt = v.text; }
+                const v = p.versions[activeModalVersionIndex];
+                if (v) txt = v.text;
             } else {
-                const b = p.blocks[activeModalBlockId]; const v = b.versions[b.currentIdx||0];
-                if(v){ txt = v.text; }
+                const b = p.blocks[activeModalBlockId];
+                const v = b.versions[b.currentIdx || 0];
+                if (v) txt = v.text;
             }
-            if(txt) { executeCopy(txt); showToast(`Copiado`); }
+            if (txt) {
+                executeCopy(txt);
+                showToast("¡Copiado al portapapeles!");
+            }
         }
 
         function handleCategoryChange() {
             const cat = document.getElementById('promptCategory').value;
-            if (cat === 'videos') { document.getElementById('singlePromptFieldContainer').classList.add('hidden'); document.getElementById('videoBlocksFieldContainer').classList.remove('hidden'); } 
-            else { document.getElementById('singlePromptFieldContainer').classList.remove('hidden'); document.getElementById('videoBlocksFieldContainer').classList.add('hidden'); }
+            if (cat === 'videos') {
+                document.getElementById('singlePromptFieldContainer').classList.add('hidden');
+                document.getElementById('videoBlocksFieldContainer').classList.remove('hidden');
+            } else {
+                document.getElementById('singlePromptFieldContainer').classList.remove('hidden');
+                document.getElementById('videoBlocksFieldContainer').classList.add('hidden');
+            }
         }
 
         function openNewPromptModal() {
             document.getElementById('promptCategory').value = currentTab; 
             const popEl = document.getElementById('promptPeople');
-            if(popEl) { popEl.value = (currentFilter === 'all') ? "1" : currentFilter; }
+            if (popEl) popEl.value = (currentFilter === 'all') ? "1" : currentFilter;
             handleCategoryChange();
             document.getElementById('newPromptModal').classList.remove('hidden');
-            base64UploadCache = {data:null, name:""};
+            base64UploadCache = { data: null, name: "" };
         }
         
         function closeNewPromptModal() {
@@ -803,83 +1042,133 @@
             const peopleVal = document.getElementById('promptPeople').value;
             const people = parseInt(peopleVal) || 1; 
 
-            if (!name) return showToast("Falta Título");
+            if (!name) return showToast("Falta el título");
 
             let obj;
             if (cat === 'imagenes') {
                 const txt = document.getElementById('promptText').value.trim();
-                if (!txt) return showToast("Falta Prompt");
+                if (!txt) return showToast("Falta el texto del prompt");
                 obj = { 
-                    id: Date.now(), category: 'imagenes', peopleCount: people, personas: people, 
-                    name: name, versions: [{ id: 1, text: txt, date: getFormattedDate() }], currentVersionIndex: 0, date: getFormattedDate() 
+                    id: Date.now(),
+                    category: 'imagenes',
+                    peopleCount: people,
+                    personas: people, 
+                    name: name,
+                    versions: [{ id: 1, text: txt, date: getFormattedDate() }],
+                    currentVersionIndex: 0,
+                    date: getFormattedDate(),
+                    demoImg: base64UploadCache.data || null
                 };
             } else {
                 const b1 = document.getElementById('block1Text').value.trim();
                 const b2 = document.getElementById('block2Text').value.trim();
                 const b3 = document.getElementById('block3Text').value.trim();
-                if (!b1 && !b2 && !b3) return showToast("Falta llenar un bloque");
+                if (!b1 && !b2 && !b3) return showToast("Llena al menos un bloque");
                 obj = { 
-                    id: Date.now(), category: 'videos', peopleCount: people, personas: people, name: name, date: getFormattedDate(), 
-                    activeBlockId: b1?'b1':(b2?'b2':'b3'), 
+                    id: Date.now(),
+                    category: 'videos',
+                    peopleCount: people,
+                    personas: people,
+                    name: name,
+                    date: getFormattedDate(), 
+                    activeBlockId: b1 ? 'b1' : (b2 ? 'b2' : 'b3'), 
                     blocks: {
-                        b1: { versions: b1?[{id:1, text:b1, date:getFormattedDate()}]:[], currentIdx:0 },
-                        b2: { versions: b2?[{id:1, text:b2, date:getFormattedDate()}]:[], currentIdx:0 },
-                        b3: { versions: b3?[{id:1, text:b3, date:getFormattedDate()}]:[], currentIdx:0 }
+                        b1: { versions: b1 ? [{ id: 1, text: b1, date: getFormattedDate() }] : [], currentIdx: 0 },
+                        b2: { versions: b2 ? [{ id: 1, text: b2, date: getFormattedDate() }] : [], currentIdx: 0 },
+                        b3: { versions: b3 ? [{ id: 1, text: b3, date: getFormattedDate() }] : [], currentIdx: 0 }
                     }
                 };
             }
 
             document.getElementById('savePromptSpinner').classList.remove('hidden');
-            const ok = await apiSavePrompt(obj);
+            currentTab = cat;
+            currentFilter = 'all';
+            updateFloatingMenuStyles();
+            await apiSavePrompt(obj);
             document.getElementById('savePromptSpinner').classList.add('hidden');
-            
-            if (ok) { 
-                currentTab = cat; currentFilter = String(people); 
-                updateFloatingMenuStyles(); closeNewPromptModal(); 
-            }
+            closeNewPromptModal();
+            showToast("Prompt creado");
         }
 
-        async function fetchPrompts() {
+        async function fetchPrompts(showFeedback = false) {
+            const badge = document.getElementById('syncBadge');
+            if (badge) badge.classList.remove('hidden');
+
             try {
-                const ctrl = new AbortController(); setTimeout(() => ctrl.abort(), 10000);
+                const ctrl = new AbortController();
+                const timeoutId = setTimeout(() => ctrl.abort(), 9000);
                 const fetchUrl = webAppUrl + (webAppUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
                 const res = await fetch(fetchUrl, { method: 'GET', mode: 'cors', redirect: 'follow', signal: ctrl.signal });
+                clearTimeout(timeoutId);
                 if (!res.ok) throw new Error();
-                prompts = await res.json();
-                localStorage.setItem('editorial_prompts_v4', JSON.stringify(prompts));
+                const remoteData = await res.json();
+                if (Array.isArray(remoteData) && remoteData.length > 0) {
+                    prompts = remoteData;
+                    localStorage.setItem('editorial_prompts_v6', JSON.stringify(prompts));
+                } else {
+                    prompts = JSON.parse(localStorage.getItem('editorial_prompts_v6')) || demoFallbackPrompts;
+                }
+                if (showFeedback) showToast("Sincronizado con Drive");
             } catch (e) {
-                prompts = JSON.parse(localStorage.getItem('editorial_prompts_v4')) || [];
-                showToast("Modo Offline / Cargando local");
+                const cached = JSON.parse(localStorage.getItem('editorial_prompts_v6'));
+                prompts = (cached && cached.length > 0) ? cached : demoFallbackPrompts;
+            } finally {
+                if (badge) badge.classList.add('hidden');
+                renderPrompts(true);
             }
-            renderPrompts(false);
         }
 
         async function apiSavePrompt(p) {
-            const i = prompts.findIndex(x => x.id === p.id); if(i>-1) prompts[i]=p; else prompts.unshift(p);
-            localStorage.setItem('editorial_prompts_v4', JSON.stringify(prompts)); renderPrompts(false);
+            const i = prompts.findIndex(x => x.id === p.id);
+            if (i > -1) prompts[i] = p;
+            else prompts.unshift(p);
+            localStorage.setItem('editorial_prompts_v6', JSON.stringify(prompts));
+            renderPrompts(false);
+
             try {
                 const pay = { action: 'save', prompt: p };
-                if (base64UploadCache.data) { pay.imageBase64 = base64UploadCache.data; pay.imageName = base64UploadCache.name; }
-                const res = await fetch(webAppUrl, { method: 'POST', mode: 'cors', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(pay) });
+                if (base64UploadCache.data) {
+                    pay.imageBase64 = base64UploadCache.data;
+                    pay.imageName = base64UploadCache.name;
+                }
+                const res = await fetch(webAppUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(pay)
+                });
                 const json = await res.json();
-                base64UploadCache = {data:null, name:""};
-                if(json.success) { await fetchPrompts(); return true; } else throw new Error();
-            } catch(e) { return false; }
+                base64UploadCache = { data: null, name: "" };
+                if (json.success) {
+                    await fetchPrompts(false);
+                    return true;
+                }
+                return false;
+            } catch(e) {
+                return false;
+            }
         }
 
         async function apiDeletePrompt(id) {
-            prompts = prompts.filter(p => p.id !== id); localStorage.setItem('editorial_prompts_v4', JSON.stringify(prompts)); renderPrompts(false);
-            try { await fetch(webAppUrl, { method: 'POST', mode: 'cors', redirect: 'follow', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({action:'delete', id:id}) }); } catch(e){}
-        }
-
-        function deletePrompt(id, e) {
-            if(e) e.stopPropagation();
-            document.getElementById('customConfirmModal').classList.remove('hidden');
-            confirmCallback = async () => { await apiDeletePrompt(id); showToast("Recurso Eliminado"); };
+            prompts = prompts.filter(p => p.id !== id);
+            localStorage.setItem('editorial_prompts_v6', JSON.stringify(prompts));
+            renderPrompts(false);
+            try {
+                await fetch(webAppUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'delete', id: id })
+                });
+            } catch(e) {}
         }
 
         function deleteActivePrompt(e) {
-            if(e) e.stopPropagation();
+            if (e) e.stopPropagation();
+            document.getElementById('confirmModalTitle').textContent = "¿Eliminar este Prompt?";
+            document.getElementById('confirmModalDesc').textContent = "Se eliminará el prompt completo y todas sus versiones.";
             document.getElementById('customConfirmModal').classList.remove('hidden');
             confirmCallback = async () => { 
                 await apiDeletePrompt(activePromptId); 
@@ -892,18 +1181,42 @@
         function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
         
         async function pushLocalDataToSheets() {
-            const loc = JSON.parse(localStorage.getItem('editorial_prompts_v4'))||[]; if(!loc.length) return showToast("Nada que subir");
+            const loc = JSON.parse(localStorage.getItem('editorial_prompts_v6')) || [];
+            if (!loc.length) return showToast("Nada que subir");
+            showToast("Subiendo a Drive...");
             try {
-                await fetch(webAppUrl, { method:'POST', mode:'cors', redirect:'follow', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({action:'syncAll', prompts:loc}) });
-                showToast("Subida exitosa"); fetchPrompts();
-            } catch(e) { showToast("Error al subir"); }
+                await fetch(webAppUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    redirect: 'follow',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: 'syncAll', prompts: loc })
+                });
+                showToast("Subida exitosa");
+                fetchPrompts(false);
+            } catch(e) {
+                showToast("Error al subir");
+            }
             closeSettingsModal();
         }
 
         window.onload = () => {
-            fetchPrompts(); updateFloatingMenuStyles();
-            document.getElementById('confirmYesBtn').onclick = () => { document.getElementById('customConfirmModal').classList.add('hidden'); if(confirmCallback) confirmCallback(); };
-            document.getElementById('confirmNoBtn').onclick = () => document.getElementById('customConfirmModal').classList.add('hidden');
+            // Renderizamos de inmediato con caché o fallback para que se vea al instante en el Preview de Canvas
+            const cached = JSON.parse(localStorage.getItem('editorial_prompts_v6'));
+            prompts = (cached && cached.length > 0) ? cached : demoFallbackPrompts;
+            updateFloatingMenuStyles();
+            renderPrompts(true);
+
+            // Luego sincronizamos con tu Google Sheets en segundo plano
+            fetchPrompts(false);
+
+            document.getElementById('confirmYesBtn').onclick = () => {
+                document.getElementById('customConfirmModal').classList.add('hidden');
+                if (confirmCallback) confirmCallback();
+            };
+            document.getElementById('confirmNoBtn').onclick = () => {
+                document.getElementById('customConfirmModal').classList.add('hidden');
+            };
         };
     </script>
 </body>
