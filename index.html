@@ -1,15 +1,24 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Prompt Archive</title>
     
+    <!-- Preconnect a Google Drive para acelerar la descarga de thumbnails -->
+    <link rel="preconnect" href="https://drive.google.com" crossorigin>
+    <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
+
     <!-- Icono 📇 para navegador y Home Screen de iOS -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📇</text></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📇</text></svg>">
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
@@ -17,8 +26,6 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #08080A; 
-            color: #FFFFFF;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
         }
@@ -27,21 +34,21 @@
         
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(150,150,150,0.35); border-radius: 4px; }
         
         .modal-overlay {
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.55);
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
         }
 
         /* Animación para el filtrado de tarjetas */
         @keyframes fadeUpBlur {
-            0% { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(6px); }
+            0% { opacity: 0; transform: translateY(14px) scale(0.98); filter: blur(4px); }
             100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
         .animate-fade-in {
-            animation: fadeUpBlur 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: fadeUpBlur 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             opacity: 0; 
         }
         
@@ -51,42 +58,99 @@
             100% { transform: translateY(0); opacity: 1; }
         }
         .animate-slide-up {
-            animation: slideUpImmersive 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: slideUpImmersive 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Despliegue suave de la barra de búsqueda */
+        #searchBarWrapper {
+            transition: max-height 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, margin-top 0.32s ease;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            margin-top: 0;
+        }
+        #searchBarWrapper.open {
+            max-height: 70px;
+            opacity: 1;
+            margin-top: 14px;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col pb-28 selection:bg-indigo-500 selection:text-white">
+<body class="bg-[#F5F5F7] dark:bg-[#08080A] text-gray-900 dark:text-white min-h-screen flex flex-col pb-28 selection:bg-indigo-500 selection:text-white transition-colors duration-300">
 
-    <!-- ENCABEZADO ESTILO "DISCOVER" -->
-    <header class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 pt-7 pb-3">
-        <!-- Fila Superior: Título + Avatar/Acciones -->
-        <div class="flex items-center justify-between mb-5">
-            <div class="flex items-center gap-3">
-                <h1 class="font-montserrat text-2xl sm:text-3xl font-bold tracking-tight text-white">
+    <!-- ENCABEZADO ESTILO "DISCOVER" CON BOTONES UNIFICADOS -->
+    <header class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-3">
+        <!-- Fila Principal: Título + Todos los Botones de Acción a la Derecha -->
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <h1 class="font-montserrat text-xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white truncate">
                     Prompt Archive
                 </h1>
-                <span id="syncBadge" class="hidden text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white/10 text-white/60 border border-white/10">
+                <span id="syncBadge" class="hidden text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-gray-500 dark:text-white/60 border border-black/10 dark:border-white/10 flex-shrink-0">
                     Sincronizando...
                 </span>
             </div>
 
-            <!-- Botones Superiores Derecha (Ajustes + Avatar/Nuevo) -->
-            <div class="flex items-center gap-2.5">
-                <button onclick="openSettingsModal()" class="w-10 h-10 rounded-full bg-[#16161A] border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 transition-all" title="Sincronización y Ajustes">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            <!-- Botones Superiores Derecha: Lupa, Filtro, Sincronización, Tema, Agregar -->
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                
+                <!-- 1. Botón Lupa (Mostrar/Ocultar Buscador) -->
+                <button onclick="toggleSearchBar()" id="searchToggleBtn" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30 transition-all" title="Buscar">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                 </button>
-                <button onclick="openNewPromptModal()" class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 p-[2px] shadow-lg hover:scale-105 transition-transform" title="Nuevo Prompt">
-                    <div class="w-full h-full bg-[#08080A] hover:bg-transparent transition-colors rounded-full flex items-center justify-center text-white">
+
+                <!-- 2. Botón Filtro (Personas) -->
+                <div class="relative" id="filterBtnContainer">
+                    <button onclick="toggleFilterMenu()" id="mainFilterBtn" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200/80 dark:border-white/10 shadow-sm hover:border-gray-300 dark:hover:border-white/30 flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white transition-all relative" title="Filtrar por Personas">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                        </svg>
+                        <span id="filterActiveDot" class="hidden absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-white dark:ring-[#16161A]"></span>
+                    </button>
+
+                    <!-- Dropdown del filtro -->
+                    <div id="filterDropdown" class="hidden absolute top-[118%] right-0 bg-white/95 dark:bg-[#16161A]/95 backdrop-blur-xl border border-gray-200 dark:border-white/15 rounded-2xl shadow-2xl p-1.5 flex items-center gap-1 z-50 min-w-[195px]">
+                        <button onclick="switchPeopleFilter('all')" id="filterBtn_all" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl bg-gray-900 text-white dark:bg-white dark:text-black transition-all">Todos</button>
+                        <button onclick="switchPeopleFilter('1')" id="filterBtn_1" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-gray-500 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all">1P</button>
+                        <button onclick="switchPeopleFilter('2')" id="filterBtn_2" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-gray-500 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all">2P</button>
+                        <button onclick="switchPeopleFilter('3')" id="filterBtn_3" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-gray-500 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all">3P</button>
+                    </div>
+                </div>
+
+                <!-- 3. Botón Sincronización (Reemplaza al engrane) -->
+                <button onclick="openSettingsModal()" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30 transition-all" title="Sincronización Cloud">
+                    <svg id="syncHeaderIcon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
+
+                <!-- 4. Botón Alternar Tema Claro / Oscuro -->
+                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200/80 dark:border-white/10 shadow-sm flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white hover:border-gray-300 dark:hover:border-white/30 transition-all" title="Cambiar Tema Claro/Oscuro">
+                    <!-- Icono Luna (se muestra en modo claro) -->
+                    <svg id="themeIconMoon" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    <!-- Icono Sol (se muestra en modo oscuro) -->
+                    <svg id="themeIconSun" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </button>
+
+                <!-- 5. Botón Nuevo Prompt (+) -->
+                <button onclick="openNewPromptModal()" class="w-10 h-10 rounded-full bg-gray-900 dark:bg-gradient-to-tr dark:from-indigo-600 dark:via-purple-600 dark:to-pink-500 p-[2px] shadow-md hover:scale-105 transition-transform" title="Nuevo Prompt">
+                    <div class="w-full h-full bg-gray-900 dark:bg-[#08080A] hover:bg-transparent transition-colors rounded-full flex items-center justify-center text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                     </div>
                 </button>
             </div>
         </div>
 
-        <!-- Fila Buscador + Botón de Filtro (Idéntico a la referencia) -->
-        <div class="flex items-center gap-2.5">
-            <div class="relative flex-grow">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white/40 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <!-- Barra de Búsqueda Desplegable (Empuja la galería hacia abajo al activarse) -->
+        <div id="searchBarWrapper">
+            <div class="relative w-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400 dark:text-white/40 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <input 
@@ -94,35 +158,16 @@
                     id="searchInput" 
                     oninput="handleSearchInput(this.value)"
                     placeholder="Buscar por título o contenido del prompt..." 
-                    class="w-full bg-[#16161A] border border-white/10 focus:border-white/30 rounded-full py-3 pl-11 pr-9 text-xs sm:text-sm text-white placeholder-white/40 outline-none transition-all"
+                    class="w-full bg-white dark:bg-[#16161A] border border-gray-200 dark:border-white/10 focus:border-gray-400 dark:focus:border-white/30 rounded-full py-3 pl-11 pr-10 text-xs sm:text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/40 outline-none shadow-sm transition-all"
                 >
-                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/40 hover:text-gray-800 dark:hover:text-white">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
-            </div>
-
-            <!-- Botón de Filtro con Sliders -->
-            <div class="relative" id="filterBtnContainer">
-                <button onclick="toggleFilterMenu()" id="mainFilterBtn" class="w-11 h-11 rounded-full bg-[#16161A] border border-white/10 hover:border-white/30 flex items-center justify-center text-white/80 hover:text-white transition-all relative" title="Filtrar por Personas">
-                    <!-- Icono Sliders igual a la referencia -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                    </svg>
-                    <span id="filterActiveDot" class="hidden absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full ring-2 ring-[#16161A]"></span>
-                </button>
-
-                <!-- Dropdown del filtro -->
-                <div id="filterDropdown" class="hidden absolute top-[115%] right-0 bg-[#16161A]/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-2xl p-1.5 flex items-center gap-1 z-50 min-w-[190px]">
-                    <button onclick="switchPeopleFilter('all')" id="filterBtn_all" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl bg-white text-black transition-all">Todos</button>
-                    <button onclick="switchPeopleFilter('1')" id="filterBtn_1" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all">1P</button>
-                    <button onclick="switchPeopleFilter('2')" id="filterBtn_2" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all">2P</button>
-                    <button onclick="switchPeopleFilter('3')" id="filterBtn_3" class="flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all">3P</button>
-                </div>
             </div>
         </div>
     </header>
 
-    <!-- CUERPO PRINCIPAL (CATÁLOGO ESCALONADO A 2 COLUMNAS EN MÓVIL) -->
+    <!-- CUERPO PRINCIPAL (CATÁLOGO ESCALONADO A 2 COLUMNAS EN MÓVIL, PROPORCIÓN 9:16) -->
     <main class="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-2 flex-grow">
         <div id="promptCatalog" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-5 items-start">
             <!-- Tarjetas Inyectadas por JS -->
@@ -130,151 +175,147 @@
 
         <!-- ESTADO VACÍO -->
         <div id="emptyState" class="hidden flex flex-col items-center justify-center py-24 text-center">
-            <div class="w-16 h-16 rounded-full bg-[#16161A] border border-white/10 flex items-center justify-center mb-4 text-white/30">
+            <div class="w-16 h-16 rounded-full bg-white dark:bg-[#16161A] border border-gray-200 dark:border-white/10 flex items-center justify-center mb-4 text-gray-400 dark:text-white/30 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
             </div>
-            <p class="text-xs font-bold tracking-widest uppercase text-white/40">No se encontraron prompts</p>
+            <p class="text-xs font-bold tracking-widest uppercase text-gray-400 dark:text-white/40">No se encontraron prompts</p>
         </div>
     </main>
 
-    <!-- DOCK INFERIOR FLOTANTE (OSCURO Y MINIMALISTA) -->
-    <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-[#16161A]/90 backdrop-blur-2xl border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-full p-1.5 flex items-center gap-1">
-        <button onclick="switchTab('imagenes')" id="tabBtn_imagenes" class="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-white text-black shadow-sm">
+    <!-- DOCK INFERIOR FLOTANTE (ADAPTADO A MODO CLARO / OSCURO) -->
+    <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 bg-white/90 dark:bg-[#16161A]/90 backdrop-blur-2xl border border-gray-200/80 dark:border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.8)] rounded-full p-1.5 flex items-center gap-1 transition-colors">
+        <button onclick="switchTab('imagenes')" id="tabBtn_imagenes" class="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-gray-900 text-white dark:bg-white dark:text-black shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             <span>Imágenes</span>
         </button>
-        <button onclick="switchTab('videos')" id="tabBtn_videos" class="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-white/60 hover:text-white">
+        <button onclick="switchTab('videos')" id="tabBtn_videos" class="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
             <span>Videos</span>
         </button>
     </div>
 
-    <!-- MODAL 2: VISTA DE DETALLE INMERSIVA (ESTILO PERFIL "KAIRA R, 22") -->
+    <!-- MODAL 2: VISTA DE DETALLE INMERSIVA OPTIMIZADA PARA FOTOS 9:16 -->
     <div id="detailModal" class="hidden fixed inset-0 z-50 flex items-end md:items-center justify-center modal-overlay transition-all">
         
-        <div class="w-full h-[96vh] md:h-[88vh] md:max-w-[430px] bg-[#08080A] md:border md:border-white/15 md:rounded-[42px] rounded-t-[36px] shadow-[0_25px_70px_rgba(0,0,0,0.95)] relative flex flex-col overflow-hidden animate-slide-up">
+        <div class="w-full h-[96vh] md:h-[90vh] md:max-w-[440px] bg-white dark:bg-[#08080A] md:border md:border-gray-200 dark:md:border-white/15 md:rounded-[42px] rounded-t-[36px] shadow-[0_25px_70px_rgba(0,0,0,0.35)] dark:shadow-[0_25px_70px_rgba(0,0,0,0.95)] relative overflow-y-auto custom-scrollbar animate-slide-up transition-colors">
 
-            <!-- SECCIÓN SUPERIOR: IMAGEN + CONTROLES FLOTANTES + BARRAS DE PROGRESO -->
-            <div class="relative w-full h-[54%] flex-shrink-0 bg-[#121216] overflow-hidden">
-                <!-- Imagen de Fondo Centrada sin estirarse -->
-                <img id="detailModalBg" src="" referrerpolicy="no-referrer" class="w-full h-full object-cover object-center transition-all duration-500">
+            <!-- Botones Superiores Flotantes Fijos (Atrás / Eliminar Recurso) -->
+            <div class="sticky top-4 left-0 right-0 px-5 flex justify-between items-center z-40 pointer-events-none">
+                <button onclick="closeDetailModal()" class="pointer-events-auto w-10 h-10 rounded-full bg-black/45 hover:bg-black/70 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-all shadow-md">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                </button>
+                <button onclick="deleteActivePrompt(event)" class="pointer-events-auto w-10 h-10 rounded-full bg-black/45 hover:bg-red-500/90 backdrop-blur-md border border-white/20 text-white flex items-center justify-center transition-all shadow-md" title="Eliminar Prompt Completo">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+            </div>
+
+            <!-- SECCIÓN SUPERIOR: IMAGEN 9:16 COMPLETA Y SIN CORTAR CABEZAS -->
+            <div class="relative w-full aspect-[9/16] max-h-[70vh] -mt-14 bg-gray-100 dark:bg-[#121216] overflow-hidden flex items-center justify-center">
+                <!-- Imagen principal con alineación superior-central (object-top) para respetar retratos 9:16 -->
+                <img id="detailModalBg" src="" referrerpolicy="no-referrer" class="w-full h-full object-cover object-top transition-all duration-500">
                 
                 <!-- Fallback visual cuando no hay foto o es video -->
-                <div id="detailModalBgFallback" class="hidden absolute inset-0 bg-gradient-to-br from-indigo-950/60 via-[#0E0E14] to-[#08080A] flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-white/15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <div id="detailModalBgFallback" class="hidden absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-100 to-white dark:from-indigo-950/60 dark:via-[#0E0E14] dark:to-[#08080A] flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-gray-300 dark:text-white/15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </div>
 
-                <!-- Degradado oscuro inferior para fundirse con el cuerpo negro -->
-                <div class="absolute inset-0 bg-gradient-to-t from-[#08080A] via-[#08080A]/25 to-black/30 pointer-events-none"></div>
+                <!-- Degradado inferior suave que funde la imagen 9:16 con el cuerpo del modal (Claro u Oscuro) -->
+                <div class="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white via-white/40 to-transparent dark:from-[#08080A] dark:via-[#08080A]/45 dark:to-transparent pointer-events-none"></div>
 
-                <!-- Botones Superiores (Atrás / Eliminar Recurso) -->
-                <div class="absolute top-5 left-5 right-5 flex justify-between items-center z-30">
-                    <button onclick="closeDetailModal()" class="w-10 h-10 rounded-full bg-black/35 hover:bg-black/60 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-all">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                    </button>
-                    <button onclick="deleteActivePrompt(event)" class="w-10 h-10 rounded-full bg-black/35 hover:bg-red-500/80 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-all" title="Eliminar Prompt Completo">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                </div>
-
-                <!-- Columna de 3 Botones Flotantes a la Derecha (Igual a la referencia: X, Corazón/Copiar, Chat/Foto) -->
+                <!-- Columna de 3 Botones Flotantes a la Derecha -->
                 <div class="absolute right-5 bottom-10 flex flex-col gap-3 z-30">
                     <!-- Botón 1: Eliminar versión actual (X) -->
-                    <button id="btnDeleteCurrentVersion" onclick="deleteCurrentVersion(event)" class="w-11 h-11 rounded-full bg-black/45 hover:bg-red-500/80 backdrop-blur-lg border border-white/15 text-white flex items-center justify-center transition-all shadow-lg" title="Eliminar esta versión">
+                    <button id="btnDeleteCurrentVersion" onclick="deleteCurrentVersion(event)" class="w-11 h-11 rounded-full bg-black/50 hover:bg-red-500/90 backdrop-blur-lg border border-white/20 text-white flex items-center justify-center transition-all shadow-lg" title="Eliminar esta versión">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                     <!-- Botón 2: Copiar Prompt Activo -->
-                    <button onclick="copyCurrentModalPrompt()" class="w-11 h-11 rounded-full bg-white text-black hover:scale-105 backdrop-blur-lg flex items-center justify-center transition-all shadow-xl" title="Copiar Versión Activa">
+                    <button onclick="copyCurrentModalPrompt()" class="w-11 h-11 rounded-full bg-white text-black hover:scale-105 backdrop-blur-lg border border-black/10 flex items-center justify-center transition-all shadow-xl" title="Copiar Versión Activa">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                     </button>
                     <!-- Botón 3: Subir / Cambiar Foto -->
                     <div class="relative">
                         <input type="file" id="detailFile" class="hidden" accept="image/*" onchange="handleImageFileSelect(this, 'detailLocalPreviewContainer', 'detailLocalPreview')">
-                        <button onclick="triggerFileInput('detailFile')" class="w-11 h-11 rounded-full bg-black/45 hover:bg-black/75 backdrop-blur-lg border border-white/15 text-white flex items-center justify-center transition-all shadow-lg" title="Cambiar Imagen">
+                        <button onclick="triggerFileInput('detailFile')" class="w-11 h-11 rounded-full bg-black/50 hover:bg-black/80 backdrop-blur-lg border border-white/20 text-white flex items-center justify-center transition-all shadow-lg" title="Cambiar Imagen">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </button>
                     </div>
                 </div>
 
                 <!-- Mini Previsualización si se selecciona nueva foto -->
-                <div id="detailLocalPreviewContainer" class="hidden absolute top-20 left-5 z-40 bg-black/80 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 flex items-center gap-2 shadow-2xl">
-                    <img id="detailLocalPreview" src="" class="w-10 h-12 object-cover rounded-xl">
+                <div id="detailLocalPreviewContainer" class="hidden absolute top-20 left-5 z-40 bg-black/85 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 flex items-center gap-2 shadow-2xl">
+                    <img id="detailLocalPreview" src="" class="w-10 h-14 object-cover rounded-xl">
                     <button type="button" id="btnUpdateThumbnail" onclick="updateThumbnailOnly(event)" class="bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider py-2 px-3 rounded-xl flex items-center gap-1.5">
                         <span id="updateThumbSpinner" class="hidden animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
                         Subir
                     </button>
-                    <button type="button" onclick="removeSelectedImage(event, 'detailFile', 'detailLocalPreviewContainer', '')" class="text-white/50 hover:text-white p-1">
+                    <button type="button" onclick="removeSelectedImage(event, 'detailFile', 'detailLocalPreviewContainer', '')" class="text-white/60 hover:text-white p-1">
                         <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
                 </div>
 
-                <!-- Barras de Progreso de Versiones (Igual a la línea morada/gris de la referencia) -->
+                <!-- Barras de Progreso de Versiones -->
                 <div id="versionProgressBars" class="absolute bottom-3 left-6 right-6 flex gap-1.5 z-30">
                     <!-- Inyectado por JS -->
                 </div>
             </div>
 
-            <!-- SECCIÓN INFERIOR: INFORMACIÓN ESTILO PERFIL OSCURO -->
-            <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pt-2 pb-6 flex flex-col justify-between bg-[#08080A]">
+            <!-- SECCIÓN INFERIOR: INFORMACIÓN DEL PROMPT (CLARO / OSCURO) -->
+            <div class="px-6 pt-2 pb-7 flex flex-col justify-between bg-white dark:bg-[#08080A] transition-colors">
                 <div>
-                    <!-- Nombre + Insignia Verificada -->
+                    <!-- Nombre del Prompt (Sin el check azul) -->
                     <div class="flex items-center gap-2 mb-1">
-                        <h2 id="detailName" class="font-montserrat text-2xl font-bold text-white tracking-tight">Título del Prompt</h2>
-                        <!-- Badge Azul Verificado -->
-                        <svg class="w-5 h-5 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
+                        <h2 id="detailName" class="font-montserrat text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Título del Prompt</h2>
                     </div>
 
-                    <!-- Subtítulo Ubicación / Meta -->
-                    <div class="flex items-center gap-1.5 text-white/60 text-xs mb-5">
-                        <svg class="w-3.5 h-3.5 text-white/50" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                    <!-- Subtítulo Meta -->
+                    <div class="flex items-center gap-1.5 text-gray-500 dark:text-white/60 text-xs mb-5">
+                        <svg class="w-3.5 h-3.5 text-gray-400 dark:text-white/50" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
                         <span id="detailSubtitleMeta">Imagen · 1 Persona · v1</span>
                     </div>
 
                     <!-- Selector de Bloques (Solo si es Video) -->
                     <div id="videoBlockSelectorContainer" class="hidden mb-4">
-                        <div class="text-[11px] text-white/40 font-medium mb-2">Secuencia de Video</div>
+                        <div class="text-[11px] text-gray-400 dark:text-white/40 font-medium mb-2">Secuencia de Video</div>
                         <div class="flex gap-2">
-                            <button id="modalBlockBtn_b1" onclick="switchModalBlock('b1')" class="flex-1 py-2 text-xs font-bold rounded-full border border-white/10 transition-all">🎬 Bloque 1</button>
-                            <button id="modalBlockBtn_b2" onclick="switchModalBlock('b2')" class="flex-1 py-2 text-xs font-bold rounded-full border border-white/10 transition-all">⚡ Bloque 2</button>
-                            <button id="modalBlockBtn_b3" onclick="switchModalBlock('b3')" class="flex-1 py-2 text-xs font-bold rounded-full border border-white/10 transition-all">🏁 Bloque 3</button>
+                            <button id="modalBlockBtn_b1" onclick="switchModalBlock('b1')" class="flex-1 py-2 text-xs font-bold rounded-full border border-gray-200 dark:border-white/10 transition-all">🎬 Bloque 1</button>
+                            <button id="modalBlockBtn_b2" onclick="switchModalBlock('b2')" class="flex-1 py-2 text-xs font-bold rounded-full border border-gray-200 dark:border-white/10 transition-all">⚡ Bloque 2</button>
+                            <button id="modalBlockBtn_b3" onclick="switchModalBlock('b3')" class="flex-1 py-2 text-xs font-bold rounded-full border border-gray-200 dark:border-white/10 transition-all">🏁 Bloque 3</button>
                         </div>
                     </div>
 
-                    <!-- Sección "About" (Texto del Prompt) -->
+                    <!-- Sección "Prompt Activo" -->
                     <div class="mb-5">
                         <div class="flex items-center justify-between mb-1.5">
-                            <span class="text-[11px] font-medium text-white/40">Prompt Activo</span>
-                            <button onclick="copyCurrentModalPrompt()" class="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Copiar texto</button>
+                            <span class="text-[11px] font-semibold text-gray-400 dark:text-white/40">Prompt Activo</span>
+                            <button onclick="copyCurrentModalPrompt()" class="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors">Copiar texto</button>
                         </div>
-                        <div class="bg-[#121216] border border-white/10 rounded-2xl p-3.5 max-h-36 overflow-y-auto custom-scrollbar">
-                            <p id="detailPromptBox" class="text-white/90 text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap select-all">Contenido...</p>
+                        <div class="bg-gray-50 dark:bg-[#121216] border border-gray-200 dark:border-white/10 rounded-2xl p-3.5 max-h-44 overflow-y-auto custom-scrollbar">
+                            <p id="detailPromptBox" class="text-gray-800 dark:text-white/90 text-xs sm:text-[13px] leading-relaxed whitespace-pre-wrap select-all">Contenido...</p>
                         </div>
                     </div>
 
-                    <!-- Sección "My Basics" (Píldoras de Personas y Versiones) -->
+                    <!-- Sección "Configuración & Versiones" -->
                     <div class="mb-5">
-                        <div class="text-[11px] font-medium text-white/40 mb-2.5">Configuración & Versiones</div>
+                        <div class="text-[11px] font-semibold text-gray-400 dark:text-white/40 mb-2.5">Configuración & Versiones</div>
                         
                         <div class="flex flex-wrap gap-2 items-center">
                             <!-- Píldora Categoría -->
-                            <div class="bg-[#16161A] border border-white/10 rounded-full px-3.5 py-2 flex items-center gap-2 text-xs font-medium text-white">
+                            <div class="bg-gray-100 dark:bg-[#16161A] border border-gray-200 dark:border-white/10 rounded-full px-3.5 py-2 flex items-center gap-2 text-xs font-medium text-gray-800 dark:text-white">
                                 <span id="detailCategoryEmoji">🖼️</span>
                                 <span id="detailCategory">Imagen</span>
                             </div>
 
                             <!-- Píldora Selector de Personas -->
-                            <div class="relative bg-[#16161A] border border-white/10 hover:border-white/30 rounded-full px-3.5 py-2 flex items-center gap-1.5 text-xs font-medium text-white transition-colors">
+                            <div class="relative bg-gray-100 dark:bg-[#16161A] border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/30 rounded-full px-3.5 py-2 flex items-center gap-1.5 text-xs font-medium text-gray-800 dark:text-white transition-colors">
                                 <span>👥</span>
-                                <select id="detailPeopleSelect" onchange="updatePeopleCount(event)" class="bg-transparent text-white font-medium outline-none cursor-pointer appearance-none pr-4">
-                                    <option value="1" class="bg-[#16161A] text-white">1 Persona</option>
-                                    <option value="2" class="bg-[#16161A] text-white">2 Personas</option>
-                                    <option value="3" class="bg-[#16161A] text-white">3 Personas</option>
+                                <select id="detailPeopleSelect" onchange="updatePeopleCount(event)" class="bg-transparent text-gray-800 dark:text-white font-medium outline-none cursor-pointer appearance-none pr-4">
+                                    <option value="1" class="bg-white dark:bg-[#16161A] text-gray-900 dark:text-white">1 Persona</option>
+                                    <option value="2" class="bg-white dark:bg-[#16161A] text-gray-900 dark:text-white">2 Personas</option>
+                                    <option value="3" class="bg-white dark:bg-[#16161A] text-gray-900 dark:text-white">3 Personas</option>
                                 </select>
-                                <svg class="w-3 h-3 text-white/50 absolute right-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                                <svg class="w-3 h-3 text-gray-400 dark:text-white/50 absolute right-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                             </div>
 
                             <!-- Píldoras de Versiones generadas dinámicamente -->
@@ -286,9 +327,9 @@
                 </div>
 
                 <!-- Input Inferior para Agregar Nueva Versión -->
-                <div class="pt-3 border-t border-white/10">
+                <div class="pt-3 border-t border-gray-200 dark:border-white/10">
                     <div class="relative flex items-center">
-                        <textarea id="newVersionText" rows="1" placeholder="Escribir nueva versión del prompt..." class="w-full bg-[#16161A] border border-white/10 focus:border-indigo-500 text-white placeholder-white/35 outline-none py-3 pl-4 pr-12 rounded-2xl text-xs resize-none transition-colors custom-scrollbar"></textarea>
+                        <textarea id="newVersionText" rows="1" placeholder="Escribir nueva versión del prompt..." class="w-full bg-gray-50 dark:bg-[#16161A] border border-gray-200 dark:border-white/10 focus:border-indigo-500 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/35 outline-none py-3 pl-4 pr-12 rounded-2xl text-xs resize-none transition-colors custom-scrollbar"></textarea>
                         <button id="saveVersionBtn" onclick="saveNewVersion()" class="absolute right-2 bg-indigo-600 hover:bg-indigo-500 text-white transition-all w-8 h-8 rounded-xl flex items-center justify-center shadow-md" title="Guardar nueva versión">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                             <span id="saveVersionSpinner" class="hidden absolute inset-0 bg-indigo-600 rounded-xl flex items-center justify-center">
@@ -301,13 +342,13 @@
         </div>
     </div>
 
-    <!-- MODAL 1: NUEVO PROMPT (DARK MODE) -->
+    <!-- MODAL 1: NUEVO PROMPT -->
     <div id="newPromptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="modal-overlay absolute inset-0" onclick="closeNewPromptModal()"></div>
-        <div class="bg-[#121216] border border-white/15 w-full max-w-md p-6 sm:p-7 relative z-10 rounded-[32px] shadow-2xl max-h-[90vh] flex flex-col text-white">
+        <div class="bg-white dark:bg-[#121216] border border-gray-200 dark:border-white/15 w-full max-w-md p-6 sm:p-7 relative z-10 rounded-[32px] shadow-2xl max-h-[90vh] flex flex-col text-gray-900 dark:text-white transition-colors">
             <div class="flex items-center justify-between mb-5">
                 <h2 class="font-montserrat text-xl font-bold tracking-tight">Nuevo Prompt</h2>
-                <button onclick="closeNewPromptModal()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/60 hover:text-white">
+                <button onclick="closeNewPromptModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 flex items-center justify-center text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
@@ -315,15 +356,15 @@
             <div class="overflow-y-auto pr-1 custom-scrollbar space-y-4 flex-grow">
                 <div class="flex gap-3">
                     <div class="flex-grow">
-                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Categoría</label>
-                        <select id="promptCategory" onchange="handleCategoryChange()" class="w-full bg-[#1C1C22] border border-white/10 rounded-2xl outline-none py-3 px-4 text-xs font-semibold text-white cursor-pointer">
+                        <label class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/40 font-bold mb-1.5">Categoría</label>
+                        <select id="promptCategory" onchange="handleCategoryChange()" class="w-full bg-gray-50 dark:bg-[#1C1C22] border border-gray-200 dark:border-white/10 rounded-2xl outline-none py-3 px-4 text-xs font-semibold text-gray-900 dark:text-white cursor-pointer">
                             <option value="imagenes">🖼️ Imágenes</option>
                             <option value="videos">🎬 Videos</option>
                         </select>
                     </div>
                     <div class="w-1/3">
-                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Personas</label>
-                        <select id="promptPeople" class="w-full bg-[#1C1C22] border border-white/10 rounded-2xl outline-none py-3 px-4 text-xs font-semibold text-white cursor-pointer text-center">
+                        <label class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/40 font-bold mb-1.5">Personas</label>
+                        <select id="promptPeople" class="w-full bg-gray-50 dark:bg-[#1C1C22] border border-gray-200 dark:border-white/10 rounded-2xl outline-none py-3 px-4 text-xs font-semibold text-gray-900 dark:text-white cursor-pointer text-center">
                             <option value="1">1P</option>
                             <option value="2">2P</option>
                             <option value="3">3P</option>
@@ -332,28 +373,28 @@
                 </div>
 
                 <div>
-                    <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Título</label>
-                    <input type="text" id="promptName" placeholder="Ej: Cyberpunk Neon Portrait..." class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 rounded-2xl outline-none py-3 px-4 text-sm font-semibold text-white placeholder-white/30 transition-colors">
+                    <label class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/40 font-bold mb-1.5">Título</label>
+                    <input type="text" id="promptName" placeholder="Ej: Cyberpunk Neon Portrait..." class="w-full bg-gray-50 dark:bg-[#1C1C22] border border-gray-200 dark:border-white/10 focus:border-indigo-500 rounded-2xl outline-none py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/30 transition-colors">
                 </div>
                 
                 <!-- Campos Imágenes -->
                 <div id="singlePromptFieldContainer" class="space-y-4">
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Prompt Texto</label>
-                        <textarea id="promptText" rows="4" placeholder="Escribe o pega el prompt..." class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 outline-none p-4 rounded-2xl resize-none custom-scrollbar text-xs text-white placeholder-white/30 transition-colors"></textarea>
+                        <label class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/40 font-bold mb-1.5">Prompt Texto</label>
+                        <textarea id="promptText" rows="4" placeholder="Escribe o pega el prompt..." class="w-full bg-gray-50 dark:bg-[#1C1C22] border border-gray-200 dark:border-white/10 focus:border-indigo-500 outline-none p-4 rounded-2xl resize-none custom-scrollbar text-xs text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/30 transition-colors"></textarea>
                     </div>
 
                     <!-- THUMBNAIL Upload -->
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1.5">Imagen de Referencia</label>
-                        <div class="border-2 border-dashed border-white/15 hover:border-indigo-500/60 rounded-2xl p-5 text-center cursor-pointer bg-[#1C1C22]/50 hover:bg-[#1C1C22] transition-all flex flex-col items-center justify-center relative min-h-[135px]" onclick="triggerFileInput('newPromptFile')">
+                        <label class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/40 font-bold mb-1.5">Imagen de Referencia (9:16)</label>
+                        <div class="border-2 border-dashed border-gray-200 dark:border-white/15 hover:border-indigo-500/60 rounded-2xl p-5 text-center cursor-pointer bg-gray-50 dark:bg-[#1C1C22]/50 hover:bg-gray-100 dark:hover:bg-[#1C1C22] transition-all flex flex-col items-center justify-center relative min-h-[135px]" onclick="triggerFileInput('newPromptFile')">
                             <input type="file" id="newPromptFile" class="hidden" accept="image/*" onchange="handleImageFileSelect(this, 'newPromptPreviewContainer', 'newPromptPreview')">
                             <div id="newPromptDropPlaceholder">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-7 w-7 text-white/30 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                <p class="text-xs font-medium text-white/40">Toca para elegir imagen</p>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-7 w-7 text-gray-400 dark:text-white/30 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                <p class="text-xs font-medium text-gray-400 dark:text-white/40">Toca para elegir imagen</p>
                             </div>
                             <div id="newPromptPreviewContainer" class="hidden absolute inset-2 bg-black rounded-xl overflow-hidden flex items-center justify-center">
-                                <img id="newPromptPreview" src="" class="h-full w-full object-cover object-center" alt="Previsualización">
+                                <img id="newPromptPreview" src="" class="h-full w-full object-cover object-top" alt="Previsualización">
                                 <button type="button" onclick="removeSelectedImage(event, 'newPromptFile', 'newPromptPreviewContainer', 'newPromptDropPlaceholder')" class="absolute top-2 right-2 bg-black/70 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors">
                                     <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                                 </button>
@@ -365,60 +406,65 @@
                 <!-- Campos Videos -->
                 <div id="videoBlocksFieldContainer" class="hidden space-y-3">
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1">Bloque 1 (Inicio)</label>
-                        <textarea id="block1Text" rows="2" class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-white"></textarea>
+                        <label class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/40 font-bold mb-1">Bloque 1 (Inicio)</label>
+                        <textarea id="block1Text" rows="2" class="w-full bg-gray-50 dark:bg-[#1C1C22] border border-gray-200 dark:border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-gray-900 dark:text-white"></textarea>
                     </div>
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1">Bloque 2 (Cuerpo)</label>
-                        <textarea id="block2Text" rows="2" class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-white"></textarea>
+                        <label class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/40 font-bold mb-1">Bloque 2 (Cuerpo)</label>
+                        <textarea id="block2Text" rows="2" class="w-full bg-gray-50 dark:bg-[#1C1C22] border border-gray-200 dark:border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-gray-900 dark:text-white"></textarea>
                     </div>
                     <div>
-                        <label class="block text-[10px] uppercase tracking-widest text-white/40 font-bold mb-1">Bloque 3 (Cierre)</label>
-                        <textarea id="block3Text" rows="2" class="w-full bg-[#1C1C22] border border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-white"></textarea>
+                        <label class="block text-[10px] uppercase tracking-widest text-gray-400 dark:text-white/40 font-bold mb-1">Bloque 3 (Cierre)</label>
+                        <textarea id="block3Text" rows="2" class="w-full bg-gray-50 dark:bg-[#1C1C22] border border-gray-200 dark:border-white/10 focus:border-indigo-500 outline-none p-3 rounded-xl text-xs text-gray-900 dark:text-white"></textarea>
                     </div>
                 </div>
             </div>
             
-            <div class="flex gap-2.5 pt-5 mt-3 border-t border-white/10">
-                <button onclick="closeNewPromptModal()" class="flex-1 bg-white/5 hover:bg-white/10 text-white/70 rounded-2xl text-xs font-bold py-3.5 transition-colors">Cancelar</button>
-                <button onclick="saveNewPrompt()" class="flex-1 bg-white text-black hover:bg-gray-200 rounded-2xl text-xs font-bold py-3.5 flex justify-center items-center gap-2 transition-colors shadow-lg">
-                    <span id="savePromptSpinner" class="hidden animate-spin h-3.5 w-3.5 border-2 border-black border-t-transparent rounded-full"></span>
+            <div class="flex gap-2.5 pt-5 mt-3 border-t border-gray-200 dark:border-white/10">
+                <button onclick="closeNewPromptModal()" class="flex-1 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-white/70 rounded-2xl text-xs font-bold py-3.5 transition-colors">Cancelar</button>
+                <button onclick="saveNewPrompt()" class="flex-1 bg-gray-900 text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 rounded-2xl text-xs font-bold py-3.5 flex justify-center items-center gap-2 transition-colors shadow-lg">
+                    <span id="savePromptSpinner" class="hidden animate-spin h-3.5 w-3.5 border-2 border-current border-t-transparent rounded-full"></span>
                     Guardar
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL 3: AJUSTES -->
+    <!-- MODAL 3: SINCRONIZACIÓN -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
         <div class="modal-overlay absolute inset-0" onclick="closeSettingsModal()"></div>
-        <div class="bg-[#121216] border border-white/15 w-full max-w-sm p-7 relative z-10 rounded-[32px] shadow-2xl text-center text-white">
-            <h2 class="font-montserrat text-lg font-bold mb-2">Sincronización Cloud</h2>
-            <p class="text-xs text-white/50 mb-6">Sincroniza tus prompts locales con tu hoja de Google Sheets y Google Drive.</p>
-            <button onclick="pushLocalDataToSheets()" class="w-full bg-white text-black text-xs font-bold uppercase tracking-wider py-3.5 rounded-2xl shadow-lg hover:bg-gray-200 transition-colors mb-2.5">Subir Datos a Drive</button>
-            <button onclick="fetchPrompts(true)" class="w-full bg-[#1C1C22] border border-white/10 text-white text-xs font-bold uppercase tracking-wider py-3.5 rounded-2xl hover:bg-white/10 transition-colors mb-2.5">Recargar desde Drive</button>
-            <button onclick="closeSettingsModal()" class="w-full bg-transparent text-white/50 hover:text-white text-xs font-bold uppercase tracking-wider py-2.5 rounded-xl transition-colors">Cerrar</button>
+        <div class="bg-white dark:bg-[#121216] border border-gray-200 dark:border-white/15 w-full max-w-sm p-7 relative z-10 rounded-[32px] shadow-2xl text-center text-gray-900 dark:text-white">
+            <div class="w-12 h-12 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+            </div>
+            <h2 class="font-montserrat text-lg font-bold mb-1.5">Sincronización Cloud</h2>
+            <p class="text-xs text-gray-500 dark:text-white/50 mb-6">Sincroniza tus prompts locales con tu hoja de Google Sheets y Google Drive.</p>
+            <button onclick="pushLocalDataToSheets()" class="w-full bg-gray-900 text-white dark:bg-white dark:text-black text-xs font-bold uppercase tracking-wider py-3.5 rounded-2xl shadow-lg hover:opacity-90 transition-opacity mb-2.5">Subir Datos a Drive</button>
+            <button onclick="fetchPrompts(true)" class="w-full bg-gray-100 dark:bg-[#1C1C22] border border-gray-200 dark:border-white/10 text-gray-800 dark:text-white text-xs font-bold uppercase tracking-wider py-3.5 rounded-2xl hover:bg-gray-200 dark:hover:bg-white/10 transition-colors mb-2.5">Recargar desde Drive</button>
+            <button onclick="closeSettingsModal()" class="w-full bg-transparent text-gray-400 dark:text-white/50 hover:text-gray-700 dark:hover:text-white text-xs font-bold uppercase tracking-wider py-2.5 rounded-xl transition-colors">Cerrar</button>
         </div>
     </div>
 
     <!-- MODAL CONFIRMACIÓN -->
     <div id="customConfirmModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div class="modal-overlay absolute inset-0"></div>
-        <div class="bg-[#121216] border border-white/15 w-full max-w-xs p-6 relative z-10 rounded-[28px] shadow-2xl text-center text-white">
-            <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+        <div class="bg-white dark:bg-[#121216] border border-gray-200 dark:border-white/15 w-full max-w-xs p-6 relative z-10 rounded-[28px] shadow-2xl text-center text-gray-900 dark:text-white">
+            <div class="w-12 h-12 bg-red-500/15 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </div>
             <h3 id="confirmModalTitle" class="font-montserrat font-bold text-base mb-1">Confirmar Acción</h3>
-            <p id="confirmModalDesc" class="text-xs text-white/50 mb-5">Esta acción es permanente y no se puede deshacer.</p>
+            <p id="confirmModalDesc" class="text-xs text-gray-500 dark:text-white/50 mb-5">Esta acción es permanente y no se puede deshacer.</p>
             <div class="flex gap-2">
                 <button id="confirmYesBtn" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors">Eliminar</button>
-                <button id="confirmNoBtn" class="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors">Cancelar</button>
+                <button id="confirmNoBtn" class="flex-1 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-700 dark:text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors">Cancelar</button>
             </div>
         </div>
     </div>
     
     <!-- TOAST -->
-    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-white text-black px-5 py-2.5 rounded-full text-[11px] font-bold tracking-wider uppercase opacity-0 transition-all duration-300 z-[70] shadow-2xl pointer-events-none translate-y-[-20px]">
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-full text-[11px] font-bold tracking-wider uppercase opacity-0 transition-all duration-300 z-[70] shadow-2xl pointer-events-none translate-y-[-20px]">
         Mensaje
     </div>
 
@@ -436,7 +482,7 @@
         let base64UploadCache = { data: null, name: "" };
         let confirmCallback = null;
 
-        // Datos iniciales de muestra por si el preview de Canvas está sin conexión o aún no carga Drive
+        // Datos iniciales de muestra en proporción 9:16
         const demoFallbackPrompts = [
             {
                 id: 1001,
@@ -446,10 +492,10 @@
                 personas: 2,
                 date: '18 Oct 26',
                 currentVersionIndex: 0,
-                demoImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+                demoImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
                 versions: [
-                    { id: 1, text: 'Editorial flash photography, couple sitting on vintage sofa, natural skin texture, 35mm film grain, moody warm indoor lighting --ar 4:5', date: '18 Oct 26' },
-                    { id: 2, text: 'High fashion editorial, couple lounging on textured couch, soft shadows, candid expression, Kodak Portra 400 --ar 4:5', date: '18 Oct 26' }
+                    { id: 1, text: 'Editorial flash photography, couple sitting on vintage sofa, natural skin texture, 35mm film grain, moody warm indoor lighting --ar 9:16', date: '18 Oct 26' },
+                    { id: 2, text: 'High fashion editorial, couple lounging on textured couch, soft shadows, candid expression, Kodak Portra 400 --ar 9:16', date: '18 Oct 26' }
                 ]
             },
             {
@@ -460,7 +506,7 @@
                 personas: 2,
                 date: '18 Oct 26',
                 currentVersionIndex: 0,
-                demoImg: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+                demoImg: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80',
                 versions: [
                     { id: 1, text: 'Cinematic night portrait at a dimly lit luxury bar counter, warm tungsten pendant lights, shallow depth of field, luxury aesthetic.', date: '18 Oct 26' }
                 ]
@@ -473,7 +519,7 @@
                 personas: 1,
                 date: '18 Oct 26',
                 currentVersionIndex: 0,
-                demoImg: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+                demoImg: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
                 versions: [
                     { id: 1, text: 'Minimalist studio portrait on wooden stool, pastel cyan backdrop, tailored white blazer and pleated skirt, soft diffused key light.', date: '18 Oct 26' }
                 ]
@@ -486,12 +532,27 @@
                 personas: 1,
                 date: '18 Oct 26',
                 currentVersionIndex: 0,
-                demoImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+                demoImg: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80',
                 versions: [
                     { id: 1, text: 'High angle flash portrait sitting near wooden stairs outdoors at night, autumn leaves on ground, crisp direct flash look.', date: '18 Oct 26' }
                 ]
             }
         ];
+
+        // Control de Tema Claro (Predeterminado) / Oscuro
+        function initTheme() {
+            const savedTheme = localStorage.getItem('prompt_archive_theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('prompt_archive_theme', isDark ? 'dark' : 'light');
+        }
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -516,6 +577,25 @@
             temp.select();
             document.execCommand('copy');
             document.body.removeChild(temp);
+        }
+
+        // Mostrar u ocultar barra de búsqueda desplazando la galería
+        function toggleSearchBar() {
+            const wrapper = document.getElementById('searchBarWrapper');
+            const btn = document.getElementById('searchToggleBtn');
+            const input = document.getElementById('searchInput');
+            if (!wrapper) return;
+
+            const isOpen = wrapper.classList.toggle('open');
+            if (isOpen) {
+                btn.classList.add('ring-2', 'ring-indigo-500');
+                setTimeout(() => input?.focus(), 150);
+            } else {
+                btn.classList.remove('ring-2', 'ring-indigo-500');
+                if (searchQuery) {
+                    clearSearch();
+                }
+            }
         }
 
         function handleSearchInput(val) {
@@ -563,11 +643,11 @@
             const bImg = document.getElementById('tabBtn_imagenes');
             const bVid = document.getElementById('tabBtn_videos');
             if (currentTab === 'imagenes') {
-                bImg.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-white text-black shadow-sm";
-                bVid.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-white/60 hover:text-white";
+                bImg.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-gray-900 text-white dark:bg-white dark:text-black shadow-sm";
+                bVid.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white";
             } else {
-                bVid.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-white text-black shadow-sm";
-                bImg.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-white/60 hover:text-white";
+                bVid.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all bg-gray-900 text-white dark:bg-white dark:text-black shadow-sm";
+                bImg.className = "flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold transition-all text-gray-500 dark:text-white/60 hover:text-gray-900 dark:hover:text-white";
             }
 
             const activeDot = document.getElementById('filterActiveDot');
@@ -581,9 +661,9 @@
                 const el = document.getElementById('filterBtn_' + f);
                 if (el) {
                     if (currentFilter === f) {
-                        el.className = "flex-1 px-3 py-2 text-[11px] font-bold rounded-xl bg-white text-black transition-all";
+                        el.className = "flex-1 px-3 py-2 text-[11px] font-bold rounded-xl bg-gray-900 text-white dark:bg-white dark:text-black transition-all";
                     } else {
-                        el.className = "flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all";
+                        el.className = "flex-1 px-3 py-2 text-[11px] font-bold rounded-xl text-gray-500 dark:text-white/60 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all";
                     }
                 }
             });
@@ -623,21 +703,26 @@
             
             const htmlContent = filtered.map((prompt, index) => {
                 const pCountVal = parseInt(prompt.peopleCount || prompt.personas) || 1;
-                const animationDelay = triggerAnimation ? `style="animation-delay: ${index * 0.04}s;"` : '';
+                const animationDelay = triggerAnimation ? `style="animation-delay: ${index * 0.035}s;"` : '';
                 const animationClass = triggerAnimation ? 'animate-fade-in' : '';
                 
-                // Efecto escalonado (staggered) igual a la imagen de referencia en columnas pares
+                // Efecto escalonado en columnas pares para móvil
                 const staggerClass = (index % 2 === 1) ? 'mt-5 sm:mt-0' : '';
 
+                // Prioridad alta para las primeras 4 imágenes visibles y sz=w400 para carga ultrarrápida
+                const loadingAttr = index < 4 ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
+
                 let imgTag = `
-                    <div class="absolute inset-0 bg-gradient-to-br from-[#1E1E28] to-[#101015] flex items-center justify-center">
-                        <svg class="w-10 h-10 text-white/15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <div class="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-[#1E1E28] dark:to-[#101015] flex items-center justify-center">
+                        <svg class="w-10 h-10 text-gray-400 dark:text-white/15" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     </div>`;
                     
-                if (prompt.thumbnailId) {
-                    imgTag = `<img src="https://drive.google.com/thumbnail?id=${prompt.thumbnailId}&sz=w800" referrerpolicy="no-referrer" loading="lazy" class="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 z-10" alt="${prompt.name}" onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=download&id=${prompt.thumbnailId}';">`;
+                if (prompt.demoImg && prompt.demoImg.startsWith('data:')) {
+                    imgTag = `<img src="${prompt.demoImg}" decoding="async" class="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 z-10" alt="${prompt.name}">`;
+                } else if (prompt.thumbnailId) {
+                    imgTag = `<img src="https://drive.google.com/thumbnail?id=${prompt.thumbnailId}&sz=w400" referrerpolicy="no-referrer" ${loadingAttr} decoding="async" class="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 z-10" alt="${prompt.name}" onerror="this.onerror=null; this.src='https://drive.google.com/uc?export=download&id=${prompt.thumbnailId}';">`;
                 } else if (prompt.demoImg) {
-                    imgTag = `<img src="${prompt.demoImg}" loading="lazy" class="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 z-10" alt="${prompt.name}">`;
+                    imgTag = `<img src="${prompt.demoImg}" ${loadingAttr} decoding="async" class="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 z-10" alt="${prompt.name}">`;
                 }
 
                 // Calculamos versión activa para mostrar en el subtítulo
@@ -661,33 +746,28 @@
                 }
 
                 return `
-                    <div onclick="openImmersiveDetail(${prompt.id})" class="relative w-full aspect-[3/4] rounded-[28px] overflow-hidden group border border-white/10 hover:border-white/25 shadow-lg transition-all duration-300 bg-[#141418] cursor-pointer ${staggerClass} ${animationClass}" ${animationDelay}>
+                    <div onclick="openImmersiveDetail(${prompt.id})" class="relative w-full aspect-[9/16] rounded-[28px] overflow-hidden group border border-black/5 dark:border-white/10 hover:border-black/20 dark:hover:border-white/25 shadow-md hover:shadow-xl transition-all duration-300 bg-gray-200 dark:bg-[#141418] cursor-pointer ${staggerClass} ${animationClass}" ${animationDelay}>
                         ${imgTag}
                         ${topVideoPills}
                         
-                        <!-- Gradiente oscuro en la base estilo Discover Reference -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-transparent z-10 pointer-events-none"></div>
+                        <!-- Gradiente oscuro en la base para legibilidad del título sobre la foto -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent z-10 pointer-events-none"></div>
 
-                        <!-- Información Inferior estilo "Sarah J, 25" + Botón Circular Derecha -->
+                        <!-- Información Inferior (Sin el check azul) + Botón Circular Derecha -->
                         <div class="absolute bottom-3.5 left-3.5 right-3.5 z-20 flex items-end justify-between gap-2">
                             <div class="min-w-0 flex-1">
                                 <!-- Subtítulo con Pin: Personas + Versión -->
-                                <div class="flex items-center gap-1 text-[10px] font-medium text-white/75 mb-0.5">
+                                <div class="flex items-center gap-1 text-[10px] font-medium text-white/80 mb-0.5">
                                     <svg class="w-3 h-3 text-white/80 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
                                     <span class="truncate">${pCountVal} ${pCountVal === 1 ? 'Persona' : 'Personas'} · v${activeVerNum}</span>
                                 </div>
 
-                                <!-- Nombre del Prompt + Check Azul -->
-                                <div class="flex items-center gap-1.5">
-                                    <h3 class="font-montserrat font-bold text-[13px] sm:text-[15px] text-white leading-tight line-clamp-2">${prompt.name}</h3>
-                                    <svg class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                                    </svg>
-                                </div>
+                                <!-- Nombre del Prompt limpio (Sin icono azul) -->
+                                <h3 class="font-montserrat font-bold text-[13px] sm:text-[15px] text-white leading-tight line-clamp-2">${prompt.name}</h3>
                             </div>
 
-                            <!-- Botón Circular Copiar (como el botón de corazón en la referencia) -->
-                            <button onclick="copyCardPrompt(${prompt.id}, event)" class="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 flex items-center justify-center bg-black/45 hover:bg-white hover:text-black backdrop-blur-md border border-white/15 text-white rounded-full transition-all shadow-lg active:scale-90" title="Copiar última versión">
+                            <!-- Botón Circular Copiar -->
+                            <button onclick="copyCardPrompt(${prompt.id}, event)" class="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 flex items-center justify-center bg-black/45 hover:bg-white hover:text-black backdrop-blur-md border border-white/20 text-white rounded-full transition-all shadow-lg active:scale-90" title="Copiar última versión">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                             </button>
                         </div>
@@ -886,13 +966,17 @@
             if (peopleSel) peopleSel.value = pCount;
             document.getElementById('detailName').textContent = p.name;
             
-            // Imagen de fondo del modal
+            // Imagen de fondo del modal (Optimizada: muestra primero el thumbnail ligero o caché y luego mejora resolución)
             const bgEl = document.getElementById('detailModalBg');
             const fallbackEl = document.getElementById('detailModalBgFallback');
-            if (p.thumbnailId) {
+            if (p.demoImg && p.demoImg.startsWith('data:')) {
                 bgEl.style.display = 'block';
                 fallbackEl.classList.add('hidden');
-                bgEl.src = `https://drive.google.com/thumbnail?id=${p.thumbnailId}&sz=w1000`;
+                bgEl.src = p.demoImg;
+            } else if (p.thumbnailId) {
+                bgEl.style.display = 'block';
+                fallbackEl.classList.add('hidden');
+                bgEl.src = `https://drive.google.com/thumbnail?id=${p.thumbnailId}&sz=w800`;
                 bgEl.onerror = function() { 
                     this.onerror = function() {
                         this.style.display = 'none';
@@ -925,8 +1009,8 @@
                     const el = document.getElementById(`modalBlockBtn_${b}`);
                     if(el) {
                         el.className = (b === activeModalBlockId)
-                            ? "flex-1 py-2 text-xs font-bold rounded-full bg-white text-black transition-all shadow"
-                            : "flex-1 py-2 text-xs font-bold rounded-full bg-[#16161A] text-white/60 border border-white/10 hover:text-white transition-all";
+                            ? "flex-1 py-2 text-xs font-bold rounded-full bg-gray-900 text-white dark:bg-white dark:text-black transition-all shadow"
+                            : "flex-1 py-2 text-xs font-bold rounded-full bg-gray-100 dark:bg-[#16161A] text-gray-600 dark:text-white/60 border border-gray-200 dark:border-white/10 hover:text-gray-900 dark:hover:text-white transition-all";
                     }
                 });
                 const bData = p.blocks[activeModalBlockId] || { versions: [], currentIdx: 0 };
@@ -939,22 +1023,22 @@
             document.getElementById('detailPromptBox').textContent = activeVer ? activeVer.text : "Sin contenido en este bloque.";
             document.getElementById('detailSubtitleMeta').textContent = `${p.category === 'imagenes' ? 'Imagen' : 'Video'} · ${pCount} ${pCount === 1 ? 'Persona' : 'Personas'} · ${activeVer ? 'v' + activeVer.id : 'Sin versión'}`;
 
-            // Renderizar barras de progreso superiores estilo "Stories / Tinder Profile"
+            // Renderizar barras de progreso superiores
             const progressContainer = document.getElementById('versionProgressBars');
             if (versionsArr.length > 0) {
                 progressContainer.innerHTML = versionsArr.map((v, i) => `
-                    <button onclick="switchModalVersion(${i})" class="h-1 flex-1 rounded-full transition-all ${i === cIdx ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]' : 'bg-white/25 hover:bg-white/50'}" title="Versión v${v.id}"></button>
+                    <button onclick="switchModalVersion(${i})" class="h-1 flex-1 rounded-full transition-all ${i === cIdx ? 'bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]' : 'bg-black/20 dark:bg-white/25 hover:bg-black/40 dark:hover:bg-white/50'}" title="Versión v${v.id}"></button>
                 `).join('');
             } else {
                 progressContainer.innerHTML = '';
             }
 
-            // Renderizar Píldoras de Versiones en "My Basics"
+            // Renderizar Píldoras de Versiones
             const pillsContainer = document.getElementById('detailVersionsContainer');
             pillsContainer.innerHTML = versionsArr.map((v, i) => {
                 const isActive = i === cIdx;
                 return `
-                    <button onclick="switchModalVersion(${i})" class="rounded-full px-3.5 py-2 flex items-center gap-1.5 text-xs font-semibold transition-all ${isActive ? 'bg-indigo-600 text-white border border-indigo-400 shadow-md' : 'bg-[#16161A] text-white/65 border border-white/10 hover:border-white/30 hover:text-white'}">
+                    <button onclick="switchModalVersion(${i})" class="rounded-full px-3.5 py-2 flex items-center gap-1.5 text-xs font-semibold transition-all ${isActive ? 'bg-indigo-600 text-white border border-indigo-400 shadow-md' : 'bg-gray-100 dark:bg-[#16161A] text-gray-600 dark:text-white/65 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/30 hover:text-gray-900 dark:hover:text-white'}">
                         <span>⚡ v${v.id}</span>
                         ${v.date ? `<span class="text-[10px] opacity-65">· ${v.date}</span>` : ''}
                     </button>
@@ -1092,7 +1176,9 @@
 
         async function fetchPrompts(showFeedback = false) {
             const badge = document.getElementById('syncBadge');
+            const syncIcon = document.getElementById('syncHeaderIcon');
             if (badge) badge.classList.remove('hidden');
+            if (syncIcon) syncIcon.classList.add('animate-spin');
 
             try {
                 const ctrl = new AbortController();
@@ -1114,7 +1200,8 @@
                 prompts = (cached && cached.length > 0) ? cached : demoFallbackPrompts;
             } finally {
                 if (badge) badge.classList.add('hidden');
-                renderPrompts(true);
+                if (syncIcon) syncIcon.classList.remove('animate-spin');
+                renderPrompts(false);
             }
         }
 
@@ -1201,6 +1288,7 @@
         }
 
         window.onload = () => {
+            initTheme();
             // Renderizamos de inmediato con caché o fallback para que se vea al instante en el Preview de Canvas
             const cached = JSON.parse(localStorage.getItem('editorial_prompts_v6'));
             prompts = (cached && cached.length > 0) ? cached : demoFallbackPrompts;
