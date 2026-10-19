@@ -6,11 +6,12 @@
     <meta name="theme-color" id="theme-color-meta" content="#f8f9fa">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prompt Archive">
     <title>Prompt Archive</title>
     
-    <!-- Favicon e Icono de App vinculados a GitHub -->
-    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/aarondlth3/prompt_library/db2742d60b506c32eef9edcfb16470440049840a/images/Logo.png">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/aarondlth3/prompt_library/db2742d60b506c32eef9edcfb16470440049840a/images/Logo.png">
+    <!-- Favicon e Icono PWA (Carpeta) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📁</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📁</text></svg>">
     
     <link rel="preconnect" href="https://drive.google.com" crossorigin>
     <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
@@ -69,44 +70,39 @@
 <body class="text-gray-900 dark:text-white min-h-screen flex flex-col pb-36 selection:bg-indigo-500 selection:text-white transition-colors duration-300">
 
     <!-- ENCABEZADO -->
-    <header class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-4">
+    <header class="w-full max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-4 relative z-20">
         <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-3 min-w-0">
                 <img src="https://raw.githubusercontent.com/aarondlth3/prompt_library/db2742d60b506c32eef9edcfb16470440049840a/images/Logo.png" alt="Prompt Archive" class="h-9 sm:h-12 w-auto object-contain logo-blend transition-all duration-300 select-none">
             </div>
 
             <!-- Botones de Acción Derecha -->
-            <div class="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+            <div class="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0 relative">
                 
                 <!-- Buscador Desplegable -->
                 <div class="relative flex items-center">
-                    <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="Buscar..." class="w-0 opacity-0 transition-all duration-300 bg-gray-200 dark:bg-[#16161A] text-gray-900 dark:text-white rounded-full py-2 px-0 outline-none text-xs absolute right-12">
-                    <button onclick="toggleSearchBar()" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white transition-all shadow-sm z-10" title="Buscar">
+                    <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" placeholder="Buscar..." class="w-0 opacity-0 transition-all duration-300 bg-gray-200 dark:bg-[#16161A] text-gray-900 dark:text-white rounded-full py-2 px-0 outline-none text-xs absolute right-10 sm:right-12 z-0">
+                    <button onclick="toggleSearchBar()" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white transition-all shadow-sm z-10 relative" title="Buscar">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </button>
                 </div>
 
                 <!-- Botón Sincronización -->
-                <button onclick="openSettingsModal()" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white transition-all shadow-sm" title="Sincronización">
+                <button onclick="fetchPrompts(true)" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white transition-all shadow-sm relative z-10" title="Sincronización">
                     <svg id="syncHeaderIcon" class="w-4 h-4 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 </button>
 
                 <!-- Botón Tema -->
-                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white transition-all shadow-sm" title="Tema">
+                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-white dark:bg-[#16161A] border border-gray-200 dark:border-white/10 flex items-center justify-center text-gray-600 dark:text-white/70 hover:text-black dark:hover:text-white transition-all shadow-sm relative z-10" title="Tema">
                     <svg class="w-4 h-4 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
                     <svg class="w-4 h-4 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                </button>
-
-                <!-- Botón Nuevo -->
-                <button onclick="openNewPromptModal()" class="w-10 h-10 rounded-full bg-gray-900 text-white dark:bg-white dark:text-black hover:scale-105 transition-transform flex items-center justify-center shadow-md">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- CUERPO PRINCIPAL (GALERÍA 9:16) -->
-    <main class="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-2 flex-grow relative">
+    <main class="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-2 flex-grow relative z-10">
         <div id="promptCatalog" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-5 items-start">
             <!-- Las tarjetas se generan aquí una sola vez -->
         </div>
@@ -153,10 +149,15 @@
                 </div>
                 <div id="filterTagsSection">
                     <label class="block text-[10px] font-bold uppercase text-gray-400 mb-1.5">Tags</label>
-                    <div id="filterTagsList" class="flex flex-wrap gap-1 max-h-32 overflow-y-auto custom-scrollbar"></div>
+                    <div id="filterTagsList" class="flex flex-wrap gap-1 max-h-32 overflow-y-auto custom-scrollbar mb-2"></div>
                 </div>
             </div>
         </div>
+
+        <!-- Botón Nuevo (Movido al Dock) -->
+        <button onclick="openNewPromptModal()" class="w-9 h-9 ml-1 rounded-full bg-gray-900 text-white dark:bg-white dark:text-black hover:scale-105 transition-transform flex items-center justify-center shadow-md">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" /></svg>
+        </button>
     </div>
 
     <!-- MODAL MULTI-TAGS -->
@@ -191,6 +192,11 @@
             <button onclick="closeDetailModal()" class="absolute top-5 left-5 z-40 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
+            
+            <!-- Botón Eliminar Flotante -->
+            <button onclick="deleteActivePrompt(event)" class="absolute top-5 right-5 z-40 w-10 h-10 rounded-full bg-red-600/90 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg" title="Eliminar Prompt">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
 
             <!-- SECCIÓN SUPERIOR: IMAGEN 9:16 -->
             <div class="relative w-full aspect-[9/16] max-h-[68vh] bg-gray-100 dark:bg-[#121216] overflow-hidden flex items-center justify-center">
@@ -202,11 +208,8 @@
                 <!-- Degradado Fundido con el fondo inferior -->
                 <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white via-white/60 to-transparent dark:from-[#08080A] dark:via-[#08080A]/60 dark:to-transparent pointer-events-none"></div>
 
-                <!-- Botones Acciones Flotantes -->
+                <!-- Botones Acciones Flotantes Inferiores -->
                 <div class="absolute right-4 bottom-8 flex flex-col gap-3 z-30">
-                    <button onclick="deleteActivePrompt(event)" class="w-10 h-10 rounded-full bg-red-600/90 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg" title="Eliminar Prompt">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
                     <div class="relative">
                         <input type="file" id="detailFile" class="hidden" accept="image/*,image/gif" onchange="handleImageFileSelect(this, 'detailLocalPreviewContainer', 'detailLocalPreview')">
                         <button onclick="triggerFileInput('detailFile')" class="w-10 h-10 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white flex items-center justify-center shadow-lg" title="Cambiar Foto">
@@ -346,23 +349,10 @@
         </div>
     </div>
 
-    <!-- MODAL AJUSTES / SYNC -->
-    <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="modal-overlay absolute inset-0" onclick="closeSettingsModal()"></div>
-        <div class="bg-white dark:bg-[#121216] border border-gray-200 dark:border-white/10 w-full max-w-xs p-6 relative z-10 rounded-[28px] shadow-2xl text-center">
-            <svg class="w-8 h-8 mx-auto text-indigo-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            <h2 class="font-montserrat font-bold text-lg dark:text-white mb-4">Sincronización</h2>
-            <button onclick="pushLocalDataToSheets()" id="btnPushDrive" class="w-full bg-gray-100 dark:bg-[#1C1C22] text-gray-900 dark:text-white text-[10px] font-bold uppercase py-3 rounded-xl mb-2 flex justify-center items-center gap-1.5"><span id="pushSpinner" class="hidden animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full"></span>Subir Datos a Drive</button>
-            <button onclick="fetchPrompts(true)" class="w-full bg-gray-900 text-white dark:bg-white dark:text-black text-[10px] font-bold uppercase py-3 rounded-xl mb-4 flex justify-center items-center gap-1.5">Recargar desde Drive</button>
-            <button onclick="closeSettingsModal()" class="text-xs text-gray-400 font-bold uppercase tracking-wider">Cerrar</button>
-        </div>
-    </div>
-
     <!-- TOAST NOTIFICACIONES -->
     <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-900 dark:bg-white text-white dark:text-black px-5 py-2.5 rounded-full text-[10px] font-bold tracking-wider uppercase opacity-0 transition-opacity duration-300 z-[80] shadow-xl pointer-events-none">Mensaje</div>
 
     <script>
-        // ESTA URL DEBE SER TU NUEVA IMPLEMENTACIÓN DE APPS SCRIPT LUEGO DE COPIAR EL CÓDIGO
         const webAppUrl = 'https://script.google.com/macros/s/AKfycbxdrh2FqupvEOwxhHPBxnrpfnQBkm3iu9wZ_0qpD0HJXImYUWSCpQ4um7yLs1IWlB_mfg/exec';
 
         let currentTab = 'imagenes';
@@ -379,7 +369,6 @@
         let multiTagContext = null;
         let tempSelectedTags = [];
 
-        // Tags por defecto
         let SUBCATEGORIES = JSON.parse(localStorage.getItem('prompt_tags_v9')) || {
             imagenes: ['Full Body', 'Sentados', 'Piso', 'Close-Up'],
             outfits: ['Editorial', 'Streetwear', 'Casual'],
@@ -388,7 +377,6 @@
 
         function saveSubcategoriesToLocal() { localStorage.setItem('prompt_tags_v9', JSON.stringify(SUBCATEGORIES)); }
 
-        // MÉTODOS UI BÁSICOS
         function showToast(msg) {
             const toast = document.getElementById('toast');
             if(!toast) return;
@@ -415,16 +403,15 @@
             document.getElementById('theme-color-meta').setAttribute('content', isDark ? '#08080A' : '#f8f9fa');
         }
 
-        // CONTROL DE BÚSQUEDA Y FILTROS
         function toggleSearchBar() {
             const input = document.getElementById('searchInput');
             if (input.classList.contains('w-0')) {
                 input.classList.remove('w-0', 'opacity-0', 'px-0');
-                input.classList.add('w-48', 'sm:w-64', 'opacity-100', 'px-4');
+                input.classList.add('w-36', 'sm:w-64', 'opacity-100', 'px-4'); // Reduced max width on mobile
                 input.focus();
             } else {
                 input.classList.add('w-0', 'opacity-0', 'px-0');
-                input.classList.remove('w-48', 'sm:w-64', 'opacity-100', 'px-4');
+                input.classList.remove('w-36', 'sm:w-64', 'opacity-100', 'px-4');
                 input.value = '';
                 handleSearchInput('');
             }
@@ -485,12 +472,10 @@
             renderFilterDropdown();
         }
 
-        // MOTOR RENDER DOM
-        function getDriveImageUrl(id, size='w400') { return `https://drive.google.com/thumbnail?id=${id}&sz=${size}`; }
-
         function buildAllPromptsDOM() {
             const container = document.getElementById('promptCatalog');
-            const sorted = [...prompts].sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0)); // Más nuevos primero según lógica original (o invertido si quieres)
+            // ORDEN CRONOLÓGICO: Antiguos primero (a.id - b.id)
+            const sorted = [...prompts].sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0)); 
             
             container.innerHTML = sorted.map(prompt => {
                 const pCountVal = parseInt(prompt.peopleCount || prompt.personas) || 1;
@@ -513,19 +498,34 @@
 
                 let imgHTML = '';
                 if (prompt.demoImg) {
-                    imgHTML = `<img src="${prompt.demoImg}" loading="lazy" class="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 z-10 prompt-img" alt="">`;
+                    imgHTML = `<img src="${prompt.demoImg}" loading="lazy" class="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 z-10 prompt-img">`;
                 } else if (prompt.thumbnailId) {
-                    const src = getDriveImageUrl(prompt.thumbnailId, 'w400');
-                    const fb = `https://lh3.googleusercontent.com/d/${prompt.thumbnailId}=w400`;
+                    const src = `https://drive.google.com/thumbnail?id=${prompt.thumbnailId}&sz=w600`;
+                    const fb = `https://lh3.googleusercontent.com/d/${prompt.thumbnailId}`;
                     if (cat === 'videos') {
-                        // GIFs se cargan solo si se muestran (Lazy real)
-                        imgHTML = `<img data-src="${src}" data-fallback="${fb}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 z-10 prompt-img video-gif" onerror="this.src=this.dataset.fallback">`;
+                        imgHTML = `<img data-src="${src}" data-fallback="${fb}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" class="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 z-10 prompt-img video-gif" onerror="this.src=this.dataset.fallback" referrerpolicy="no-referrer">`;
                     } else {
-                        imgHTML = `<img src="${src}" loading="lazy" class="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 z-10 prompt-img" onerror="this.src='${fb}'">`;
+                        imgHTML = `<img src="${src}" loading="lazy" class="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 z-10 prompt-img" onerror="this.src='${fb}'" referrerpolicy="no-referrer">`;
                     }
                 }
 
                 const badge = cat === 'videos' ? `<span class="bg-black/60 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded border border-white/10">GIF</span>` : '';
+
+                // Botones de Copia (Múltiples para Videos, Singular para lo demás)
+                let copyActionHTML = '';
+                if (cat === 'videos') {
+                    copyActionHTML = `
+                    <div class="flex gap-1">
+                        <button onclick="copyCardPrompt(${prompt.id}, event, 'b1')" class="w-7 h-7 flex items-center justify-center bg-white/20 hover:bg-white hover:text-black backdrop-blur-md border border-white/25 text-white rounded-full transition-all text-[8px] font-bold" title="Copiar B1">B1</button>
+                        <button onclick="copyCardPrompt(${prompt.id}, event, 'b2')" class="w-7 h-7 flex items-center justify-center bg-white/20 hover:bg-white hover:text-black backdrop-blur-md border border-white/25 text-white rounded-full transition-all text-[8px] font-bold" title="Copiar B2">B2</button>
+                        <button onclick="copyCardPrompt(${prompt.id}, event, 'b3')" class="w-7 h-7 flex items-center justify-center bg-white/20 hover:bg-white hover:text-black backdrop-blur-md border border-white/25 text-white rounded-full transition-all text-[8px] font-bold" title="Copiar B3">B3</button>
+                    </div>`;
+                } else {
+                    copyActionHTML = `
+                    <button onclick="copyCardPrompt(${prompt.id}, event)" class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white/20 hover:bg-white hover:text-black backdrop-blur-md border border-white/25 text-white rounded-full transition-all" title="Copiar">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    </button>`;
+                }
 
                 return `
                     <div data-id="${prompt.id}" data-category="${cat}" data-people="${pCountVal}" data-tags="${tagsStr}" class="prompt-card hidden relative w-full aspect-[9/16] rounded-[24px] overflow-hidden group border border-black/5 dark:border-white/10 shadow-sm hover:shadow-xl transition-all bg-gray-200 dark:bg-[#141418] cursor-pointer" onclick="openImmersiveDetail(${prompt.id})">
@@ -534,12 +534,10 @@
                         <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10 pointer-events-none"></div>
                         <div class="absolute bottom-4 left-4 right-4 z-20 flex items-end justify-between gap-2">
                             <div class="min-w-0 flex-1">
-                                <div class="text-white/80 text-[9px] font-bold tracking-wider uppercase mb-1 truncate">${metaText}</div>
-                                <h3 class="font-montserrat font-bold text-sm text-white leading-tight line-clamp-2">${prompt.name}</h3>
+                                <div class="text-white/80 text-[9px] font-bold tracking-wider uppercase mb-1 truncate pointer-events-none">${metaText}</div>
+                                <h3 class="font-montserrat font-bold text-sm text-white leading-tight line-clamp-2 pointer-events-none">${prompt.name}</h3>
                             </div>
-                            <button onclick="copyCardPrompt(${prompt.id}, event)" class="w-8 h-8 flex-shrink-0 flex items-center justify-center bg-white/20 hover:bg-white hover:text-black backdrop-blur-md border border-white/25 text-white rounded-full transition-all" title="Copiar">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
+                            ${copyActionHTML}
                         </div>
                     </div>
                 `;
@@ -595,16 +593,20 @@
             });
         }
 
-        function copyCardPrompt(id, e) {
+        function copyCardPrompt(id, e, blockId = null) {
             if (e) e.stopPropagation();
             const p = prompts.find(x => x.id === id); if (!p) return;
             let txt = '';
-            if (p.category !== 'videos') { txt = p.versions[p.currentVersionIndex || 0]?.text; }
-            else { txt = p.blocks[p.activeBlockId || 'b1'].versions[p.blocks[p.activeBlockId || 'b1'].currentIdx || 0]?.text; }
+            if (p.category !== 'videos') { 
+                txt = p.versions[p.currentVersionIndex || 0]?.text; 
+            } else { 
+                const targetBlock = blockId || p.activeBlockId || 'b1';
+                txt = p.blocks[targetBlock]?.versions[p.blocks[targetBlock].currentIdx || 0]?.text; 
+            }
             if (txt) { executeCopy(txt); showToast("Copiado"); }
+            else { showToast("Bloque vacío"); }
         }
 
-        // ARCHIVOS Y BASE64
         function triggerFileInput(id) { document.getElementById(id).click(); }
 
         function handleImageFileSelect(input, cId, imgId) {
@@ -629,11 +631,11 @@
                 const img = new Image(); img.src = e.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height, max = 800; // Resolución mejorada a 800px
+                    let w = img.width, h = img.height, max = 800;
                     if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    base64UploadCache = { data: canvas.toDataURL('image/jpeg', 0.85), name: file.name }; // Calidad 85%
+                    base64UploadCache = { data: canvas.toDataURL('image/jpeg', 0.85), name: file.name };
                     document.getElementById(imgId).src = base64UploadCache.data;
                     document.getElementById(cId).classList.remove('hidden');
                     const ph = document.getElementById('newPromptDropPlaceholder'); if(ph) ph.classList.add('hidden');
@@ -650,7 +652,6 @@
             base64UploadCache = { data: null, name: "" };
         }
 
-        // SISTEMA MULTI-TAG
         function openMultiTagModal(ctx) {
             multiTagContext = ctx;
             const cat = ctx === 'new' ? document.getElementById('promptCategory').value : prompts.find(p => p.id === activePromptId).category;
@@ -706,7 +707,6 @@
 
         function closeMultiTagModal() { document.getElementById('multiTagModal').classList.add('hidden'); }
 
-        // MODAL DETALLES
         function openImmersiveDetail(id) {
             const p = prompts.find(x => x.id === id); if (!p) return;
             activePromptId = id; base64UploadCache = { data: null, name: "" };
@@ -747,8 +747,8 @@
                 bgEl.style.display = 'block'; fall.classList.add('hidden'); bgEl.src = p.demoImg;
             } else if (p.thumbnailId) {
                 bgEl.style.display = 'block'; fall.classList.add('hidden');
-                bgEl.src = getDriveImageUrl(p.thumbnailId, 'w800');
-                bgEl.onerror = () => { bgEl.src = `https://lh3.googleusercontent.com/d/${p.thumbnailId}=w800`; };
+                bgEl.src = `https://drive.google.com/thumbnail?id=${p.thumbnailId}&sz=w800`;
+                bgEl.onerror = () => { bgEl.src = `https://lh3.googleusercontent.com/d/${p.thumbnailId}`; };
             } else { bgEl.style.display = 'none'; fall.classList.remove('hidden'); }
 
             let vers = cat !== 'videos' ? (p.versions || []) : (p.blocks[p.activeBlockId||'b1']?.versions || []);
@@ -822,11 +822,20 @@
         async function updateThumbnailOnly() {
             const p = prompts.find(x => x.id === activePromptId); if(!p || !base64UploadCache.data) return;
             document.getElementById('updateThumbSpinner').classList.remove('hidden');
-            p.demoImg = base64UploadCache.data;
-            await apiSavePrompt(p);
+            
+            // Bypass local saving for heavy GIFs
+            if(base64UploadCache.data.indexOf("image/gif") !== -1) {
+                 const res = await fetch(webAppUrl, { method: 'POST', mode: 'cors', body: JSON.stringify({action: 'save', prompt: p, imageBase64: base64UploadCache.data, imageName: base64UploadCache.name})});
+                 const json = await res.json();
+                 if(json.success && json.thumbnailId) p.thumbnailId = json.thumbnailId;
+            } else {
+                 p.demoImg = base64UploadCache.data;
+                 await apiSavePrompt(p);
+            }
+            
             document.getElementById('updateThumbSpinner').classList.add('hidden');
             removeSelectedImage(null, 'detailFile', 'detailLocalPreviewContainer', null);
-            renderDetailModal();
+            fetchPrompts(true); // Force refresh
         }
 
         async function deleteActivePrompt() {
@@ -838,7 +847,6 @@
             }
         }
 
-        // CREAR PROMPT
         function openNewPromptModal() {
             document.getElementById('promptCategory').value = currentTab;
             handleCategoryChange();
@@ -875,21 +883,30 @@
             const tags = document.getElementById('newPromptSelectedTags').dataset.tags || "";
             const obj = { id: Date.now(), category: cat, name: name, date: getFormattedDate(), peopleCount: parseInt(document.getElementById('promptPeople').value)||1, personas: parseInt(document.getElementById('promptPeople').value)||1, subCategory: tags, tag: tags, demoImg: base64UploadCache.data||'' };
             
-            if(cat !== 'videos') { obj.versions = [{id:1, text: document.getElementById('promptText').value.trim(), date: getFormattedDate()}]; obj.currentVersionIndex = 0; }
+            if(cat !== 'videos') { obj.versions = [{id:1, text: documentgetElementById('promptText').value.trim(), date: getFormattedDate()}]; obj.currentVersionIndex = 0; }
             else { obj.blocks = { b1:{versions:[{id:1, text:document.getElementById('block1Text').value.trim(), date:getFormattedDate()}], currentIdx:0}, b2:{versions:[{id:1, text:document.getElementById('block2Text').value.trim(), date:getFormattedDate()}], currentIdx:0}, b3:{versions:[{id:1, text:document.getElementById('block3Text').value.trim(), date:getFormattedDate()}], currentIdx:0}}; obj.activeBlockId = 'b1'; }
 
             document.getElementById('savePromptSpinner').classList.remove('hidden');
-            await apiSavePrompt(obj);
-            document.getElementById('savePromptSpinner').classList.add('hidden');
             
-            closeNewPromptModal(); switchTab(cat);
+            if(base64UploadCache.data && base64UploadCache.data.indexOf("image/gif") !== -1) {
+                // Upload GIF directly without local save
+                const res = await fetch(webAppUrl, { method: 'POST', mode: 'cors', body: JSON.stringify({action: 'save', prompt: obj, imageBase64: base64UploadCache.data, imageName: base64UploadCache.name})});
+                const json = await res.json();
+                if(json.success && json.thumbnailId) obj.thumbnailId = json.thumbnailId;
+                obj.demoImg = '';
+                prompts.unshift(obj);
+                localStorage.setItem('editorial_prompts_v8', JSON.stringify(prompts));
+            } else {
+                await apiSavePrompt(obj);
+            }
+            
+            document.getElementById('savePromptSpinner').classList.add('hidden');
+            closeNewPromptModal(); fetchPrompts(true); switchTab(cat);
         }
 
-        // RED & SYNC
-        async function fetchPrompts(fromModal=false) {
+        async function fetchPrompts(fromUI=false) {
             const icon = document.getElementById('syncHeaderIcon');
             if(icon) { icon.classList.add('animate-spin', 'text-indigo-500'); }
-            if(fromModal) closeSettingsModal();
 
             try {
                 const res = await fetch(webAppUrl + '?t=' + Date.now(), { method: 'GET', mode: 'cors' });
@@ -910,7 +927,6 @@
         async function apiSavePrompt(p) {
             const idx = prompts.findIndex(x => x.id === p.id); if(idx>-1) prompts[idx]=p; else prompts.unshift(p);
             
-            // Proteger LocalStorage de GIFs enormes
             const safe = prompts.map(pr => { let c={...pr}; if(c.demoImg && c.demoImg.length > 250000) c.demoImg=''; return c; });
             try { localStorage.setItem('editorial_prompts_v8', JSON.stringify(safe)); } catch(e){}
             buildAllPromptsDOM();
@@ -925,15 +941,6 @@
                     buildAllPromptsDOM();
                 }
             } catch(e){}
-        }
-
-        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
-        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
-        async function pushLocalDataToSheets() {
-            document.getElementById('pushSpinner').classList.remove('hidden');
-            try { await fetch(webAppUrl, { method: 'POST', mode: 'cors', body: JSON.stringify({action: 'syncAll', prompts: prompts})}); } catch(e){}
-            document.getElementById('pushSpinner').classList.add('hidden');
-            closeSettingsModal(); showToast("Subida completada");
         }
 
         window.onload = () => {
